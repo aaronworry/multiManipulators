@@ -390,7 +390,7 @@ class UR5_new():
         if type(self.target_joint_values) != np.ndarray:
             self.target_joint_values = np.array(self.target_joint_values)
         subtarget_joint_values = self.target_joint_values - current_joints
-        dt = 1. / 240.
+        dt = 1. / self.env.hz
         dj = dt * self.velocity
         max_relative_joint = max(abs(subtarget_joint_values))
         if max_relative_joint < dj: # if it can reach in 1 step

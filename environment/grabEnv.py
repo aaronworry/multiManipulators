@@ -6,8 +6,6 @@ import torch
 
 from .elements.UR5 import UR5
 from .elements.boxOnConveyor import BoxOnConveyor
-PLACE_STEP = 0.0003
-PLACE_DELTA_THRESHOLD = 0.005
 
 
 class Env:
