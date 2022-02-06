@@ -231,8 +231,6 @@ class Robotiq2F85():
     def grab_thing(self, thing):
         thing.finished = True
         self.object = thing
-        p.resetBaseVelocity(self.object.id, linearVelocity=[0., 0., 0.], angularVelocity=[0., 0., 0.],
-                            physicsClientId=self.env.client)
         body_pose = p.getLinkState(self.id, 0, physicsClientId=self.env.client)
         obj_pose = p.getBasePositionAndOrientation(self.object.id, physicsClientId=self.env.client)
         world_to_body = p.invertTransform(body_pose[0], body_pose[1])
@@ -243,25 +241,16 @@ class Robotiq2F85():
                                                      parentFramePosition=obj_to_body[0],
                                                      childFramePosition=[0., 0., 0.], physicsClientId=self.env.client)
         self.activated = True
-        # change the set
-        self.env.available_thing_ids_set.remove(self.object)
-        self.env.removed_thing_ids_set.add(self.object)
 
     def throw_thing(self):
-
         # when UR place things, this function will be excuted, release the constraint
-        reward = 0
         if self.activated:
             self.activated = False
+        if self.contact_constraint is not None:
+            p.removeConstraint(self.contact_constraint, physicsClientId=self.env.client)
+            self.contact_constraint = None
+            self.object = None
 
-            # rigid object
-            if self.contact_constraint is not None:
-                p.removeConstraint(self.contact_constraint, physicsClientId=self.env.client)
-                self.contact_constraint = None
-                reward = 1
-                self.object = None
-
-        return reward
 
     def release(self):
         if self.activated:

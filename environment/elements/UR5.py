@@ -86,7 +86,7 @@ class UR5():
 
 
     def _createBody(self):
-        ur5_path = os.path.join(os.path.dirname(__file__),"../model/ur5_defi/ur5.urdf")
+        ur5_path = os.path.join(os.path.dirname(__file__),"../../assets/ur5_defi/ur5.urdf")
         return p.loadURDF(ur5_path, self.position, useFixedBase = 1)
 
     def reset(self):
@@ -331,6 +331,10 @@ class UR5_new():
         self.target_joint_values = None
         self.enabled = enabled
         self.subtarget_joint_actions = False
+
+        self.pick_pose = None
+        self.place_pose = None
+
         if training:
             self.id = p.loadURDF('../../assets/ur5/ur5_training.urdf',
                                       self.pose[0],
@@ -383,6 +387,9 @@ class UR5_new():
         # collision with other
 
         # self collision
+        pass
+
+    def pick_and_place_FSM(self):
         pass
 
     def compute_next_subtarget_joints(self):

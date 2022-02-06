@@ -4,8 +4,12 @@ import pybullet as p
 import pybullet_data
 import torch
 
-from .elements.UR5 import UR5_new
-from .elements.box import Box
+from elements.UR5 import UR5_new
+from elements.box import Box
+
+COLORS = {'red': [0.4, 0, 0], 'green': [0, 0.4, 0], 'blue': [0, 0, 0.4], 'black': [0, 0, 0], 'pink': [0.4, 0, 0.4],
+          'yellow': [0.4, 0.4, 0], 'cyan': [0, 0.4, 0.4]}
+Colors = [[0.4, 0, 0], [0, 0.4, 0], [0, 0, 0.4], [0, 0, 0], [0.4, 0, 0.4], [0.4, 0.4, 0], [0, 0.4, 0.4]]
 
 class Env():
     '''
@@ -14,7 +18,7 @@ class Env():
         num_thing:   max number of each type things                    num_thing = cube_num
         '''
     def __init__(self, display=True, hz=240, robot_config=None, box_config=None, env_name='One_Static_Manipulator'):
-        # one static manipulator
+        # static manipulator
         # a pile of box with different color
         # using these boxes to erect shape as request
         self.robot_config = robot_config
@@ -64,7 +68,7 @@ class Env():
             box_type, count = next(iter(box_group.items()))
             for n in range(count):
                 if box_type == 'cube':
-                    box = Box(self, [1.5, 0, 0.6*n+0.3], 'green')  # load boxes
+                    box = Box(self, [0.6, 0, 0.6*n+0.3], 'green')  # load boxes
                     self.boxes.append(box)
                     self.box_groups[idx].append(box)
                     self.box_ids.append(box.id)
@@ -80,7 +84,7 @@ class Env():
         self.available_box_ids_set = set()  # a set that include the task box
         self.removed_box_ids_set = set(self.boxes)  # not in task
 
-    def reset(self, cube_num=1):
+    def reset(self, cube_num=2):
         # init
         self.available_box_ids_set = set()  # a set that include the task box
         self.removed_box_ids_set = set(self.boxes)  # not in task
@@ -104,7 +108,7 @@ class Env():
     def close(self):
         p.disconnect(physicsClientId=self.client)
 
-    def step(self, action=None):
+    def step(self, action = None):
         # all None or (at least 1 not None)
         reward, info= 0, {}
 
@@ -115,3 +119,35 @@ class Env():
 
         obs = self._computeObs()
         return obs, reward, done
+
+class Task():
+    def __init__(self, object, pick_pose, place_pose):
+        self.object = object
+        self.pick_pose = pick_pose
+        self.place_pose = place_pose
+
+    def set_object(self, object):
+        self.object = object
+
+    def set_pick_pose(self, pick_pose):
+        self.pick_pose = pick_pose
+
+    def set_place_pose(self, place_pose):
+        self.place_pose = place_pose
+
+
+class TaskQuene():
+    # a small task describe a manipulator pick an object and place it, containing (object_id, pick_pose, place_pose)
+    # TaskQuene contain a sequence of a task
+    # manipulator can decompose a Task into many small tasks, then process it
+    """
+    a queue of task
+    """
+    def __init__(self):
+        pass
+
+
+
+if __name__ == '__main__':
+    env = Env(robot_config=[{'type1': 1}, {'type2': 0}])
+
