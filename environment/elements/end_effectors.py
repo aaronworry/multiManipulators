@@ -161,7 +161,7 @@ class Robotiq2F85():
         self.env = env
         pose = self.robot.get_end_effector_pose()  # need code
         self.id = p.loadURDF(ROBOTIQ_BASE_URDF_new, pose[0], pose[1])
-        # self.color = color
+        self.color = color
         orientation = (0., -np.pi / 2, 0.)
         self.contact_constraint = None
         self.constraint = p.createConstraint(parentBodyUniqueId=self.robot.id,

@@ -346,7 +346,7 @@ class UR5_new():
                     self.color[1],
                     self.color[2], 0.5))
         else:
-            self.body_id = p.loadURDF('assets/ur5/ur5.urdf',
+            self.body_id = p.loadURDF('../../assets/ur5/ur5.urdf',
                                       self.pose[0],
                                       self.pose[1],
                                       flags=p.URDF_USE_SELF_COLLISION)

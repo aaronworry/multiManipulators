@@ -6,12 +6,15 @@ import pybullet as p
 
 
 class Thing():
-    def __init__(self, env, position, thing_type, color):
+    colors = {'red':[0.4, 0, 0], 'green':[0, 0.4, 0], 'blue':[0, 0, 0.4], 'black':[0, 0, 0], 'pink':[0.4, 0, 0.4], 'yellow':[0.4, 0.4, 0], 'cyan':[0, 0.4, 0.4]}
+    def __init__(self, env, position, thing_type, color='black'):
         self.env = env
         self.type = thing_type
         self.position = position
+        self.finished = False
         self.id = self._createBody()
-        self.color = color
+        self.color = self.colors[color]
+        self.set_color(self.color)
 
     def _createBody(self):
         if self.type == "cube":
@@ -27,8 +30,10 @@ class Thing():
         self.position = position
         return self.position
 
-    def set_color(self):
-        pass
+    def set_color(self, color):
+        self.color = self.colors[color]
+        p.changeVisualShape(self.id, 0, textureUniqueId=-1, rgbaColor=(self.color[0], self.color[1], self.color[2], 0.5), physicsClientId=self.env.client)
+
 
     def reset(self, pose):  #0.3
         position = pose[0]
