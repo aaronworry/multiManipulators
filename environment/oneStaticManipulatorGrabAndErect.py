@@ -1,4 +1,6 @@
-#一个机械臂
-#在一堆物体中，按顺序抓取到空地
-#将空地的物体堆积成所需的形状
-
+class Env():
+    def __init__(self):
+        # one static manipulator
+        # a pile of box with different color
+        # using these boxes to erect shape as request
+        pass
