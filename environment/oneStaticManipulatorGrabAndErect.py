@@ -68,7 +68,7 @@ class Env():
             box_type, count = next(iter(box_group.items()))
             for n in range(count):
                 if box_type == 'cube':
-                    box = Box(self, [0.6, 0, 0.6*n+0.3], 'green')  # load boxes
+                    box = Box(self, [0.6, 0, 0.6*n+0.3], color='black')  # load boxes
                     self.boxes.append(box)
                     self.box_groups[idx].append(box)
                     self.box_ids.append(box.id)
@@ -76,7 +76,7 @@ class Env():
         for robot_group_index, g in enumerate(self.robot_config):
             robot_type, count = next(iter(g.items()))
             for kk in range(count):
-                robot = UR5_new(self, [0, 0, 0], robot_type)  # set the pose of ur
+                robot = UR5_new(self, [[0, 0, 0], [0, 0, 0, 1]], robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
                 self.robot_ids.append(robot.id)

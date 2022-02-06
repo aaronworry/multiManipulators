@@ -4,11 +4,11 @@ import math
 import pybullet as p
 import time
 import pybullet_data
-from end_effectors import Suction, Robotiq85, Robotiq2F85
+from .end_effectors import Suction, Robotiq85, Robotiq2F85
 from transforms3d import euler
 import collections
 from math import pi
-from pybullet_utils import (
+from .pybullet_utils import (
     get_self_link_pairs,
     violates_limits,
     get_difference_fn,
@@ -334,7 +334,7 @@ class UR5_new():
 
         self.pick_pose = None
         self.place_pose = None
-
+        '''
         if training:
             self.id = p.loadURDF('../../assets/ur5/ur5_training.urdf',
                                       self.pose[0],
@@ -350,11 +350,9 @@ class UR5_new():
                     self.color[1],
                     self.color[2], 0.5))
         else:
-            self.body_id = p.loadURDF('../../assets/ur5/ur5.urdf',
-                                      self.pose[0],
-                                      self.pose[1],
-                                      flags=p.URDF_USE_SELF_COLLISION)
-            self.ee = Robotiq2F85(self.env, self, self.color)
+        '''
+        self.body_id = p.loadURDF('../../assets/ur5/ur5.urdf', self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION)
+        self.ee = Robotiq2F85(self.env, self, self.color)
 
         robot_joint_info = [p.getJointInfo(self.body_id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.body_id))]
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]

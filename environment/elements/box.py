@@ -1,4 +1,4 @@
-from baseThing import Thing
+from .baseThing import Thing
 
 class Box(Thing):
     def __init__(self, env, position, color):
