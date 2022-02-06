@@ -351,10 +351,11 @@ class UR5_new():
                     self.color[2], 0.5))
         else:
         '''
-        self.body_id = p.loadURDF('../../assets/ur5/ur5.urdf', self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION)
+        ur5_path = os.path.join(os.path.dirname(__file__), "../../assets/ur5/ur5.urdf")
+        self.id = p.loadURDF(ur5_path, self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION)
         self.ee = Robotiq2F85(self.env, self, self.color)
 
-        robot_joint_info = [p.getJointInfo(self.body_id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.body_id))]
+        robot_joint_info = [p.getJointInfo(self.id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.id))]
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_lower_limits = [x[8] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_upper_limits = [x[9] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
@@ -416,19 +417,19 @@ class UR5_new():
         if self.ee is not None:
             self.ee.still()
         if self.subtarget_joint_actions:
-            control_joints(self.body_id, self.GROUP_INDEX['arm'], self.compute_next_subtarget_joints(), velocity=self.velocity, acceleration=self.acceleration)
+            control_joints(self.id, self.GROUP_INDEX['arm'], self.compute_next_subtarget_joints(), velocity=self.velocity, acceleration=self.acceleration)
 
     def get_pose(self):
-        return p.getBasePositionAndOrientation(self.body_id, physicsClientId=self.env.client)
+        return p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
 
     def set_pose(self, pose):
         self.pose = pose
-        p.resetBasePositionAndOrientation(self.body_id, self.pose[0], self.pose[1], physicsClientId=self.env.client)
+        p.resetBasePositionAndOrientation(self.id, self.pose[0], self.pose[1], physicsClientId=self.env.client)
         if self.ee is not None:
             self.ee.update_ee_pose()
 
     def global_to_ur5_frame(self, position, rotation=None):
-        self_pos, self_rot = p.getBasePositionAndOrientation(self.body_id, physicsClientId=self.env.client)
+        self_pos, self_rot = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
         invert_self_pos, invert_self_rot = p.invertTransform(
             self_pos, self_rot)
         ur5_frame_pos, ur5_frame_rot = p.multiplyTransforms(
@@ -438,37 +439,37 @@ class UR5_new():
         return ur5_frame_pos, ur5_frame_rot
 
     def get_link_global_positions(self):
-        linkstates = [p.getLinkState(self.body_id, link_id, computeForwardKinematics=True, physicsClientId=self.env.client) for link_id in range(UR5.LINK_COUNT)]
+        linkstates = [p.getLinkState(self.id, link_id, computeForwardKinematics=True, physicsClientId=self.env.client) for link_id in range(UR5.LINK_COUNT)]
         link_world_positions = [world_pos for world_pos, world_rot, _, _, _, _, in linkstates]
         return link_world_positions
 
     def get_arm_joint_values(self):
-        return np.array(get_joint_positions(self.body_id, self.GROUP_INDEX['arm']))
+        return np.array(get_joint_positions(self.id, self.GROUP_INDEX['arm']))
 
     def reset(self):
         self.set_arm_joints(self.home_config)
 
     def get_end_effector_pose(self, link=None):
         link = link if link is not None else self.EEF_LINK_INDEX
-        return get_link_pose(self.body_id, link)
+        return get_link_pose(self.id, link)
 
     def violates_limits(self):
-        return violates_limits(self.body_id, self.GROUP_INDEX['arm'], self.get_arm_joint_values())
+        return violates_limits(self.id, self.GROUP_INDEX['arm'], self.get_arm_joint_values())
 
     def set_target_end_eff_pos(self, pos):
         self.set_arm_joints(self.inverse_kinematics(position=pos))
 
     def inverse_kinematics(self, position, orientation=None):
-        return inverse_kinematics(self.body_id, self.EEF_LINK_INDEX, position, orientation)
+        return inverse_kinematics(self.id, self.EEF_LINK_INDEX, position, orientation)
 
     def forward_kinematics(self, joint_values):
-        return forward_kinematics(self.body_id, self.GROUP_INDEX['arm'], joint_values, self.EEF_LINK_INDEX)
+        return forward_kinematics(self.id, self.GROUP_INDEX['arm'], joint_values, self.EEF_LINK_INDEX)
 
     def control_arm_joints(self, joint_values, velocity=None):
         velocity = self.velocity if velocity is None else velocity
         self.target_joint_values = joint_values
         if not self.subtarget_joint_actions:
-            control_joints(self.body_id, self.GROUP_INDEX['arm'], self.target_joint_values, velocity=velocity, acceleration=self.acceleration)
+            control_joints(self.id, self.GROUP_INDEX['arm'], self.target_joint_values, velocity=velocity, acceleration=self.acceleration)
 
     def control_arm_joints_delta(self, delta_joint_values, velocity=None):
         self.control_arm_joints(self.get_arm_joint_values() + delta_joint_values, velocity=velocity)
@@ -490,7 +491,7 @@ class UR5_new():
         return all([np.abs(actual_joint_state[joint_id] - self.target_joint_values[joint_id]) < self.joint_epsilon for joint_id in range(len(actual_joint_state))])
 
     def set_arm_joints(self, joint_values):
-        set_joint_positions(self.body_id, self.GROUP_INDEX['arm'], joint_values)
+        set_joint_positions(self.id, self.GROUP_INDEX['arm'], joint_values)
         self.control_arm_joints(joint_values=joint_values)
         if self.ee is not None:
             self.ee.update_ee_pose()
