@@ -110,10 +110,13 @@ class Env():
 
         obs = self.stack_objects()
 
+        for robot in self.robots:
+            robot.control_arm_joints(robot.get_arm_joint_values())
+
         return obs
 
     def robot_reset(self):
-        # 将多个机械臂围成一个圈，圆心为远点，半径为 0.6
+        # 机械臂回复到初始姿态 init_pose
         pass
 
     def stack_objects(self):
@@ -122,8 +125,42 @@ class Env():
         obs = None
         return obs
 
+    def disable_UR5(self):
+        """机械臂停止"""
+        for robot in self.robots:
+            robot.disable()
+
+    def enable_UR5(self):
+        """机械臂启动"""
+        for robot in self.robots:
+            robot.enable()
+
+    def get_relative_pose(self, poseA, poseB):
+        # cal A refer B
+        posA = np.array(poseA[0])
+        oriA = np.quaternion(*poseA[1])
+
+        posB = np.array(poseB[0])
+        oriB = np.quaternion(*poseB[1])
+
+        pos = np.linalg.norm(posA - posB)
+        orn = (oriA * oriB.inverse()).angle()
+        # Get smallest positive angle
+        orn = orn % (np.pi * 2)
+        if orn > np.pi:
+            orn = 2 * np.pi - orn
+        return pos, orn
+
     def _computeObs(self):
         pass
+
+    def _getState(self):
+        pass
+
+    def _getReward(self):
+        pass
+
+
 
     def close(self):
         p.disconnect(physicsClientId=self.client)
@@ -139,6 +176,29 @@ class Env():
 
         obs = self._computeObs()
         return obs, reward, done
+
+"""
+    
+    ur5.set_pose(ur5_task['base_pose'])
+    ur5.set_arm_joints(ur5_task['start_config'])
+    ur5.step()
+    ur5.get_pose()[0] , ur5.get_pose()[1]
+    
+    ur5.check_collision() 
+    ur5.global_to_ur5_frame()
+    
+    ur5.get_end_effector_pose()
+    ur5.get_arm_joint_values()
+    ur5.get_link_global_positions()
+    
+    ur5.closest_points_to_others
+    
+    if self.action_type == 'delta':
+        ur5.control_arm_joints_delta(action)
+    elif self.action_type == 'target-norm':
+        ur5.control_arm_joints_norm(action)
+"""
+
 
 class Task():
     def __init__(self, object, pick_pose, place_pose):

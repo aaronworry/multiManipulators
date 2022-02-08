@@ -406,7 +406,7 @@ class UR5_new():
 
     def disable(self):
         self.enabled = False
-        self.set_pose(self.init_pose, [0., 0., 0., 1.])
+        # self.set_pose(self.init_pose, [0., 0., 0., 1.])
         self.reset()
         self.step()
 
