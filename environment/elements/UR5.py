@@ -429,6 +429,7 @@ class UR5_new():
             self.ee.update_ee_pose()
 
     def global_to_ur5_frame(self, position, rotation=None):
+        # relative pos and rot in ur5_base frame
         self_pos, self_rot = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
         invert_self_pos, invert_self_rot = p.invertTransform(
             self_pos, self_rot)
