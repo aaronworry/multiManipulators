@@ -1,3 +1,6 @@
+# different-driven(Jackal), Mecanum(Dingo), ackerman(car), quadruped(dog)
+# 先实现前两种
+
 import numpy as np
 import math
 import pybullet as p
