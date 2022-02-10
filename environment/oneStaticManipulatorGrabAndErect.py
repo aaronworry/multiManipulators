@@ -113,6 +113,9 @@ class Env():
         for robot in self.robots:
             robot.control_arm_joints(robot.get_arm_joint_values())
 
+        for _ in range(50):
+            p.stepSimulation()
+
         return obs
 
     def robot_reset(self):
@@ -128,12 +131,12 @@ class Env():
     def disable_UR5(self):
         """机械臂停止"""
         for robot in self.robots:
-            robot.disable()
+            robot.disable()    #将机械臂移出工作空间
 
     def enable_UR5(self):
         """机械臂启动"""
         for robot in self.robots:
-            robot.enable()
+            robot.enable()  #将机械臂加入工作空间
 
     def get_relative_pose(self, poseA, poseB):
         # cal A refer B
@@ -170,6 +173,9 @@ class Env():
         reward, info= 0, {}
 
         # 机械臂运动
+        for robot in self.robots:
+            robot.pick_and_place_FSM()
+
 
         p.stepSimulation(physicsClientId=self.client)
         done = 1
@@ -179,9 +185,10 @@ class Env():
 
 """
     
-    ur5.set_pose(ur5_task['base_pose'])
-    ur5.set_arm_joints(ur5_task['start_config'])
+    ur5.set_pose()
+    ur5.set_arm_joints()
     ur5.step()
+    
     ur5.get_pose()[0] , ur5.get_pose()[1]
     
     ur5.check_collision() 
@@ -245,6 +252,11 @@ def sync(i, start_time, timestep):
         if elapsed < (i*timestep):
             time.sleep(timestep*i - elapsed)
 
+def cal_action_quene(observation):
+
+    # 一个deque
+    return 1
+
 if __name__ == '__main__':
 
 
@@ -252,12 +264,17 @@ if __name__ == '__main__':
     episode = 1
     for k in range(episode):
         observation = env.reset(cube_num=2)
+        # 使用一个deque表示一系列任务，机械臂按步骤完成一个deque的子任务，直至这个deque为空
+        actionList = cal_action_quene(observation=None)
         start = time.time()
         step = 0
         done = False
         while step < 100 or (not done):
-            action = 1
-            obs, reward, done = env.step(action)
+            action = actionList[0]
+            obs, reward, done, finished = env.step(action)
+            if finished:
+                actionList.pop()
+                finished = False
             sync(step, start, env.TIMESTEP)
             step += 1
     env.close()
