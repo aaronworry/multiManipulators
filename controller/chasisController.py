@@ -1,5 +1,4 @@
-
-class VehicleController():
+class ChasisController():
     def __init__(self, robot):
         self.robot = robot
         self.state = None
@@ -18,7 +17,7 @@ class VehicleController():
         self.consecutive_turning_sim_steps = None
 
     def action(self):
-        self.state = 'moving'  #'work', 'unload'
+        self.state = 'moving'  # 'work', 'unload'
 
     def step(self):
         if self.state == 'moving':
@@ -27,4 +26,4 @@ class VehicleController():
             pass
         elif self.state == 'unload':
             pass
-    
+

@@ -3,12 +3,7 @@ import math
 import pybullet as p
 import pybullet_data
 from abc import ABC, abstractmethod
-from collectVehicle import CollectVehicle
-from grabVehicle import GrabVehicle
-from pushVehicle import PushVehicle
 import gym
-
-from vehicleController import VehicleController
 
 def restrict_heading_range(h):
     return (h + math.pi) % (2 * math.pi) - math.pi
@@ -21,7 +16,7 @@ def heading_to_orientation(h):
     return p.getQuaternionFromEuler((0, 0, h))
 
 #一个对象，和pybullet中的一个车辆进行映射
-class Vehicle(ABC):
+class Chasis(ABC):
 
     @abstractmethod
     def __init__(self, env, index):
