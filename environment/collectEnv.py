@@ -2,23 +2,19 @@
 import math
 import numpy as np
 import pybullet as p
-import pybullet_utils.bullet_client as bc
 import pybullet_data
-from UR5 import UR5
-from thingOnConveyor import ThingOnConveyor
-import gym
 import time
 
 PLACE_STEP = 0.0003
 PLACE_DELTA_THRESHOLD = 0.005
 
-class Env(gym.Env):
+class Env():
     '''
         robot_config = {'type1': robot1_num, 'type2': robot2_num}
         thing_config = {'cube': cube_num, 'cylinder': cylinder_num}
         num_thing:   max number of each tye things
     '''
-    def __init__(self, display=True, hz=240, robot_config=None, thing_config=None, env_name='UR_Conveyor'):
+    def __init__(self, display=True, hz=240, robot_config=None, thing_config=None, env_name='collect'):
         self.robot_config = robot_config
         self.thing_config = thing_config
         self.env_name = env_name
@@ -28,7 +24,7 @@ class Env(gym.Env):
         self.conveyor_speed = 0
 
         if self.robot_config is None:
-            self.robot_config = [{'type1': 2}, {'type2': 2}]
+            self.robot_config = [{'type1': 1}, {'type2': 1}]
         self.num_robots = sum(sum(g.values()) for g in self.robot_config)
         self.robot_group_types = [next(iter(g.keys())) for g in self.robot_config]
 

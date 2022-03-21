@@ -8,6 +8,7 @@ import pybullet_data
 import gym
 
 
+
 #一个对象，和pybullet中的一个车辆进行映射
 class BaseChassis():
     def __init__(self, env, pose):
@@ -22,6 +23,7 @@ class BaseChassis():
         self.state = None
 
         self.target_position = None
+        self.target_orientation = None
         self.action = None
         self.awaiting_action = False
 
@@ -36,11 +38,18 @@ class BaseChassis():
 
         self.id = self._createBody()
 
+    def update(self):
+        self.pose = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
+
     def _createBody(self):
         pass
 
     def _set_controller(self, controller):
         self.controller = controller
+
+    def set_target(self, position, orientation):
+        self.target_position = position
+        self.target_orientation = orientation
 
     def step(self):
         pass
