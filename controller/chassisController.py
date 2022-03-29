@@ -35,3 +35,7 @@ class MecanumController():
             else:
                 return 0., 0., 0., True
         return vx, vy, 0., False
+
+class DifferentialController():
+    def __init__(self):
+        pass

@@ -1,7 +1,13 @@
 import pybullet as p
 import numpy as np
 from baseChassis import BaseChassis
-from chassisController import MecanumController, DifferentialController
+import os, sys
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+pdir = os.path.dirname(parentdir)
+
+
+from controller.chassisController import MecanumController, DifferentialController
 
 def get_euler_from_quaternion(quaternion):
     return list(p.getEulerFromQuaternion(quaternion))
@@ -16,7 +22,8 @@ class Mecanum(BaseChassis):
         self.reached = False
 
     def _createBody(self):
-        pass
+        path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/urdf/dingo-o.urdf")
+        return p.loadURDF(path, self.position, useFixedBase=0)
 
     def step(self):
         self.update()

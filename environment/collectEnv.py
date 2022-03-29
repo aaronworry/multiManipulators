@@ -1,9 +1,11 @@
-# 多个移动机械臂收集物品
+
 import math
 import numpy as np
 import pybullet as p
 import pybullet_data
 import time
+from elements.manipulator import Manipulator
+from elements.baseThing import Thing
 
 PLACE_STEP = 0.0003
 PLACE_DELTA_THRESHOLD = 0.005
@@ -86,19 +88,6 @@ class Env():
 
         planeID = p.loadURDF("plane.urdf")
 
-        conveyor_collision_shape_id = p.createCollisionShape(p.GEOM_BOX, halfExtents=(0.6, 24, 0.2), physicsClientId=self.client)
-        conveyor_visual_shape_id = p.createVisualShape(p.GEOM_BOX, halfExtents=(0.6, 24, 0.2),
-                                                       rgbaColor=[0.4, 0.4, 0.4, 1.0], physicsClientId=self.client)
-        self.conveyor_id = p.createMultiBody(0, conveyor_collision_shape_id, conveyor_visual_shape_id, (0, 0, 0), physicsClientId=self.client)
-
-        platform_collision_id_1 = p.createCollisionShape(p.GEOM_BOX, halfExtents=(0.15, 24, 0.2), physicsClientId=self.client)
-        platform_visual_id_1 = p.createVisualShape(p.GEOM_BOX, halfExtents=(0.15, 24, 0.2), rgbaColor=[1., 1., 1., 1.0], physicsClientId=self.client)
-        self.platform1_id = p.createMultiBody(0, platform_collision_id_1, platform_visual_id_1, (-1., 0, 0), physicsClientId=self.client)
-
-        platform_collision_id_2 = p.createCollisionShape(p.GEOM_BOX, halfExtents=(0.15, 24, 0.2), physicsClientId=self.client)
-        platform_visual_id_2 = p.createVisualShape(p.GEOM_BOX, halfExtents=(0.15, 24, 0.2), rgbaColor=[1., 1., 1., 1.0], physicsClientId=self.client)
-        self.platform2_id = p.createMultiBody(0, platform_collision_id_2, platform_visual_id_2, (1., 0, 0), physicsClientId=self.client)
-
         self.robot_ids = []
         self.robots = []
         self.robot_groups = [[] for _ in range(len(self.robot_config))]
@@ -111,7 +100,7 @@ class Env():
                 elif robot_type == "type2":
                     X = 1
                     x = 1.5
-                robot = UR5(self, [X, 0.6 - kk * 1.2, 0.2], robot_type)  # set the pose of ur
+                robot = Manipulator(self, [X, 0.6 - kk * 1.2, 0.2], robot_type)  # set the pose of ur
                 # 添加盒子 box
                 #box = BOX(self, [x, 0.6 - kk * 1.2, 0.])
                 self.robots.append(robot)
@@ -125,12 +114,12 @@ class Env():
         for thing_group_index, t in enumerate(self.thing_config):
             thing_type, count = next(iter(t.items()))
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.
-            for n in range(5):
+            for n in range(2):
                 if thing_type == 'cylinder':
-                    Y = 1
+                    X = 1
                 elif thing_type == 'cube':
-                    Y = -1
-                thing = ThingOnConveyor(self, [4, Y, 0.3 * n], thing_type)  # load things
+                    X = -1
+                thing = Thing(self, [X, 1 + n, 0.5], thing_type)  # load things
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
                 self.thing_ids.append(thing.id)
@@ -139,7 +128,7 @@ class Env():
         self.removed_thing_ids_set = set(self.things)  # not in task
 
     def add_object(self, position, thing_type):
-        thing = ThingOnConveyor(self, position, thing_type)
+        thing = Thing(self, position, thing_type)
         self.things.append(thing)
         self.thing_ids.append(thing.id)
         self.thing_groups[thing_type].append(thing)
@@ -149,11 +138,11 @@ class Env():
         self._random = np.random.RandomState(seed)
         return seed
 
-    def reset(self, speed, cube_num=1, cylinder_num=1, margin=1.):
+    def reset(self, cube_num=2, cylinder_num=2):
         # init
-        self.conveyor_speed = speed
-        for thing in self.things:
-            thing.speed = self.conveyor_speed
+        self.available_thing_ids_set = set()
+        self.removed_box_ids_set = set(self.things)
+
         for i in range(cube_num):
             self.available_thing_ids_set.add(self.thing_groups[0][i])
             self.removed_thing_ids_set.remove(self.thing_groups[0][i])
@@ -164,7 +153,7 @@ class Env():
         for robot in self.robots:
             robot.reset()
 
-        self.put_things_on_conveyor(self.available_thing_ids_set, margin)
+        self.set_all_thing()
 
         
 
@@ -180,11 +169,11 @@ class Env():
         # computer the obs, algorithm can use it to assign the task
         ROBOT = []
         for robot in self.robots:
-            position_y = robot.position[1]
+            position = robot.position
             if robot.type == 'type1':
-                ROBOT.append([1, position_y, robot.action, robot.reward])
+                ROBOT.append([1, position, robot.action, robot.reward])
             elif robot.type == 'type2':
-                ROBOT.append([2, position_y, robot.action, robot.reward])
+                ROBOT.append([2, position, robot.action, robot.reward])
         THING = []
         for thing in self.available_thing_ids_set:
             position = thing.get_position()
@@ -192,19 +181,17 @@ class Env():
                 THING.append([1, position[0], position[1]])
             elif thing.type == 'cylinder':
                 THING.append([2, position[0], position[1]])
-        return [ROBOT, THING, self.conveyor_speed]
+        return [ROBOT, THING]
 
 
-    def put_things_on_conveyor(self, thing_sets, margin):
-        # margin:  the distence between two things
+    def set_all_thing(self):
         i = 0
-        for thing in thing_sets:
+        for thing in self.available_thing_ids_set:
             if thing.type == 'cube':
-                thing.reset(-0.3, 1.5 + i * margin)
+                thing.reset([[-1, 1.5 + i, 0.5],[0., 0., 0., 1.]])
             elif thing.type == 'cylinder':
-                thing.reset(0.2, 1.5 + i * margin)
+                thing.reset([[1, 1.5 + i, 0.5],[0., 0., 0., 1.]])
             i += 1
-            #thing._move_on_conveyor()
 
     @property
     def info(self):
@@ -219,11 +206,7 @@ class Env():
     def step(self, action=None):
         if action is not None:
             for i in range(len(self.robots)):
-                # control robot grab things
-                self.robots[i].step_discrete(action[i])
-        for thing in self.available_thing_ids_set:
-            thing._move()
-        # simulation step
+                self.robots[i].move_collect(action[i])
         p.stepSimulation(physicsClientId=self.client)
 
         reward, info = 0, {}
@@ -235,7 +218,7 @@ class Env():
             if robot.action == 'idle':
                 num_idle += 1
         
-        if len(self.available_thing_ids_set) <= 0 and num_idle == len(self.robots):
+        if num_idle == len(self.robots):
             done = True
 
         # Add ground truth robot state into info.

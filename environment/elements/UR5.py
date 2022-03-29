@@ -319,7 +319,7 @@ class UR5_new():
     RESET = [0, -1, 1, 0.5, 1, 0]
     EEF_LINK_INDEX = 7
 
-    def __init__(self, env, pose, rtype, velocity=1.0, enabled=True, acceleration=2.0, training=True):
+    def __init__(self, env, pose, fix, rtype, velocity=1.0, enabled=True, acceleration=2.0, training=True):
 
         self.velocity = velocity
         self.acceleration = acceleration
@@ -352,7 +352,7 @@ class UR5_new():
         else:
         '''
         ur5_path = os.path.join(os.path.dirname(__file__), "../../assets/ur5/ur5.urdf")
-        self.id = p.loadURDF(ur5_path, self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION)
+        self.id = p.loadURDF(ur5_path, self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION, useFixedBase = fix)
         self.ee = Robotiq2F85(self.env, self, self.color)
 
         robot_joint_info = [p.getJointInfo(self.id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.id))]
