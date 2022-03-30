@@ -328,12 +328,17 @@ class UR5_new():
         self.type = rtype
         self.color = self.colors[self.next_available_color]
         self.next_available_color = (self.next_available_color + 1) % len(self.colors)
-        self.target_joint_values = None
+
         self.enabled = enabled
         self.subtarget_joint_actions = False
+        self.grab_finished = True
+
+        self.action = 'idle'
+        self.last_action = 'idle'
 
         self.pick_pose = None
         self.place_pose = None
+        self.place_position = None
         '''
         if training:
             self.id = p.loadURDF('../../assets/ur5/ur5_training.urdf',
@@ -354,12 +359,15 @@ class UR5_new():
         ur5_path = os.path.join(os.path.dirname(__file__), "../../assets/ur5/ur5.urdf")
         self.id = p.loadURDF(ur5_path, self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION, useFixedBase = fix)
         self.ee = Robotiq2F85(self.env, self, self.color)
+        self.type = 'type2'
 
         robot_joint_info = [p.getJointInfo(self.id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.id))]
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_lower_limits = [x[8] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_upper_limits = [x[9] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self.home_config = [-np.pi, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0]
+
+        self.target_joint_values = self.home_config
 
         # for motion planning
         """
@@ -388,8 +396,82 @@ class UR5_new():
         # self collision
         pass
 
-    def pick_and_place_FSM(self):
-        pass
+    def pick_and_place_FSM(self, thing):
+        if self.action == 'idle':
+            if thing:
+                self.grab_finished = False
+                self.target_joint_values = self.inverse_kinematics(thing.get_position())
+                self.thing = thing
+                self.action = 'goToGrab'
+                self.last_action = 'idle'
+            else:
+                self.step()
+
+        elif self.action == 'goToGrab':
+            # move to the pose that ur can grab something
+            self.step()
+            if distance(self.thing.get_position() - self.ee.get_position()) <= 0.2:
+                self.action = 'grab'
+                self.last_action = 'goToGrab'
+
+        elif self.action == 'grab':
+            if self.type == 'type1':
+                if self.ee.detect_collision_with_thing(self.thing):
+                    self.ee.grab_thing(self.thing)
+                if self.ee.check_grasp():
+                    self.action = 'backToPlace'
+                    self.last_action = 'grab'
+            elif self.type == 'type2':
+                self.ee.still()
+                if distance(self.thing.get_position() - self.ee.get_position()) <= 0.2:
+                    self.ee.grab_thing(self.thing)
+                    self.action = 'closeGripper'
+                    self.last_action = 'grab'
+        elif self.action == 'closeGripper':
+            self.ee.close()
+            self.action = 'backToPlace'
+            self.last_action = 'closeGripper'
+        elif self.action == 'backToPlace':
+            # print(self.action)
+            # go to the place pose
+            self.target_joint_values = self.inverse_kinematics(self.place_position)
+            self.action = 'moveBack'
+            self.last_action = 'backToPlace'
+        elif self.action == 'moveBack':
+            # print(self.action)
+            # go to the place pose
+            self.step()
+            if distance(self.place_position - self.ee.get_position()) <= 0.2:  # 到达
+                self.action = 'place'
+                self.last_action = 'backToPlace'
+                if self.type == 'type2':
+                    self.ee.still()
+                    self.action = 'openGripper'
+                    self.last_action = 'backToPlace'
+
+        elif self.action == 'openGripper':
+            self.ee.open()
+            self.action = 'place'
+            self.last_action = 'openGripper'
+
+        elif self.action == 'place':
+            # release the ee
+            if self.type == 'type1':
+                self._reward = self.ee.throw_thing()
+            elif self.type == 'type2':
+                self.ee.still()
+                self._reward = self.ee.throw_thing()
+            p.resetBaseVelocity(self.thing.id, linearVelocity=[0., 0., 0.], angularVelocity=[0., 0., 0.],
+                                physicsClientId=self.env.client)
+            self.action = 'idle'
+            self.last_action = 'place'
+            self.pick_pose = None
+            self.working = False
+            self.thing = None
+            self.grab_finished = True
+            self.target_joint_values = self.home_config
+
+
 
     def compute_next_subtarget_joints(self):
         current_joints = self.get_arm_joint_values()
@@ -418,6 +500,10 @@ class UR5_new():
             self.ee.still()
         if self.subtarget_joint_actions:
             control_joints(self.id, self.GROUP_INDEX['arm'], self.compute_next_subtarget_joints(), velocity=self.velocity, acceleration=self.acceleration)
+        else:
+            control_joints(self.id, self.GROUP_INDEX['arm'], self.target_joint_values, velocity=self.velocity,
+                               acceleration=self.acceleration)
+
 
     def get_pose(self):
         return p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)

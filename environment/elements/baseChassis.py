@@ -7,9 +7,9 @@ import pybullet as p
 import pybullet_data
 import gym
 
+def get_euler_from_quaternion(quaternion):
+    return list(p.getEulerFromQuaternion(quaternion))
 
-
-#一个对象，和pybullet中的一个车辆进行映射
 class BaseChassis():
     def __init__(self, env, pose):
         self.env = env
@@ -40,6 +40,8 @@ class BaseChassis():
 
     def update(self):
         self.pose = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
+        self.position = self.pose[0]
+        self.orientation = get_euler_from_quaternion(self.pose[1])[2]
 
     def _createBody(self):
         pass

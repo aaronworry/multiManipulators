@@ -9,8 +9,6 @@ pdir = os.path.dirname(parentdir)
 
 from controller.chassisController import MecanumController, DifferentialController
 
-def get_euler_from_quaternion(quaternion):
-    return list(p.getEulerFromQuaternion(quaternion))
 
 class Mecanum(BaseChassis):
     def __init__(self, env, pose):
@@ -37,9 +35,8 @@ class Mecanum(BaseChassis):
         vx, vy, w, flag = self.controller.control_position(self.pose, position, orientation)
         p.resetBaseVelocity(self.id, linearVelocity=[vx, vy, 0.], angularVelocity=[0., 0., w])
         # ?
-        current_orientation = get_euler_from_quaternion(self.pose[1])[2]
-        self.linear_velocity = vx * np.cos(current_orientation) + vy * np.sin(current_orientation)
-        self.lateral_velocity = vy * np.cos(current_orientation) - vx * np.sin(current_orientation)
+        self.linear_velocity = vx * np.cos(self.orientation) + vy * np.sin(self.orientation)
+        self.lateral_velocity = vy * np.cos(self.orientation) - vx * np.sin(self.orientation)
         if flag:
             return True
         else:
