@@ -17,8 +17,8 @@ class BaseChassis():
         self.init_pose = self.pose
 
         self._last_step_simulation_count = -1
-        self.position = None
-        self.orientation = None
+        self.position = self.pose[0]
+        self.orientation = get_euler_from_quaternion(self.pose[1])[2]
 
         self.state = None
 
@@ -53,6 +53,9 @@ class BaseChassis():
         self.target_position = position
         self.target_orientation = orientation
 
+    def set_init_position(self, pose):
+        self.init_pose = pose
+
     def get_position(self):
         position, _ = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
         self.position = position
@@ -75,7 +78,7 @@ class BaseChassis():
         self.reset_pose(self.init_pose)
 
     def reset_pose(self, pose):
-        self.env.p.resetBasePositionAndOrientation(self.id, pose[0], pose[1])
+        p.resetBasePositionAndOrientation(self.id, pose[0], pose[1])
         self._last_step_simulation_count = -1
 
     def check_for_collisions(self):

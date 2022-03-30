@@ -18,12 +18,9 @@ class MecanumController():
     def control(self, linear_velocity, lateral_velocity):
         return linear_velocity, lateral_velocity
 
-    def control_position(self, pose, position, orientation):
-        current_position, Orinetation = pose
-        current_orientation = get_euler_from_quaternion(Orinetation)[2]
-
-        delta_position = position - current_position
-        delta_orientation = restrain(orientation - current_orientation)
+    def control_position(self, cur_position, cur_orientation, position, orientation):
+        delta_position = position - cur_position
+        delta_orientation = restrain(orientation - cur_orientation)
         distance = np.sqrt(delta_position[0]**2 + delta_position[1]**2)
         v = max(min(0.5 * distance / 3., 0.5), 0.15)
         vx = v * delta_position[0] / distance

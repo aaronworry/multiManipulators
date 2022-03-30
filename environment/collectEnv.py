@@ -4,8 +4,11 @@ import numpy as np
 import pybullet as p
 import pybullet_data
 import time
-from elements.manipulator import Manipulator
-from elements.baseThing import Thing
+import os, sys
+
+
+from .elements.manipulator import Manipulator
+from .elements.baseThing import Thing
 
 PLACE_STEP = 0.0003
 PLACE_DELTA_THRESHOLD = 0.005
@@ -92,14 +95,10 @@ class Env():
             robot_type, count = next(iter(g.items()))
             for kk in range(count):
                 if robot_type == "type1":
-                    X = -1
-                    x = -1.5
+                    Y = -1
                 elif robot_type == "type2":
-                    X = 1
-                    x = 1.5
-                robot = Manipulator(self, [X, 0.6 - kk * 1.2, 0.2], robot_type)  # set the pose of ur
-                # 添加盒子 box
-                #box = BOX(self, [x, 0.6 - kk * 1.2, 0.])
+                    Y = 1
+                robot = Manipulator(self, [- kk * 1.5, Y, 0.], robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
                 
@@ -111,10 +110,10 @@ class Env():
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.
             for n in range(2):
                 if thing_type == 'cylinder':
-                    X = 1
+                    Y = 1
                 elif thing_type == 'cube':
-                    X = -1
-                thing = Thing(self, [X, 1 + n, 0.5], thing_type)  # load things
+                    Y = -1
+                thing = Thing(self, [1+n, Y, 0.5], thing_type)  # load things
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
 
@@ -163,9 +162,9 @@ class Env():
         ROBOT = []
         for robot in self.robots:
             position = robot.position
-            if robot.type == 'type1':
+            if robot.ur5.type == 'type1':
                 ROBOT.append([1, position, robot.action, robot.reward])
-            elif robot.type == 'type2':
+            elif robot.ur5.type == 'type2':
                 ROBOT.append([2, position, robot.action, robot.reward])
         THING = []
         for thing in self.available_thing_ids_set:
@@ -179,12 +178,14 @@ class Env():
 
     def set_all_thing(self):
         i = 0
+        j = 0
         for thing in self.available_thing_ids_set:
             if thing.type == 'cube':
-                thing.reset([[-1, 1.5 + i, 0.5],[0., 0., 0., 1.]])
+                thing.reset([[1.5+i, -1, 0.5],[0., 0., 0., 1.]])
+                i += 1
             elif thing.type == 'cylinder':
-                thing.reset([[1, 1.5 + i, 0.5],[0., 0., 0., 1.]])
-            i += 1
+                thing.reset([[1.5+j, 1, 0.5],[0., 0., 0., 1.]])
+                j += 1
 
     @property
     def info(self):

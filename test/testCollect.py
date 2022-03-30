@@ -43,14 +43,16 @@ def get_action(robots, ROBOT, thingset, THING):
         distance = np.inf
         for j in range(len(things)):
             if ROBOT[i][0] == THING[j][0]:
-                dis = cal_distance(ROBOT[i][1], THING[j][1])
+                r_pos = np.array(ROBOT[i][1])
+                t_pos = np.array(THING[j][1])
+                dis = cal_distance(r_pos, t_pos)
                 if dis < distance:
                     distance = dis
                     result[i] = things[j]
     return result
 
 
-env = Env(robot_config=[{'type1': 1}, {'type2': 1}], thing_config=[{'cube': 2}, {'cylinder': 2}])
+env = Env(robot_config=[{'type1': 0}, {'type2': 1}], thing_config=[{'cube': 0}, {'cylinder': 2}])
 episode = 3
 for k in range(episode):
     obs = env.reset(cube_num=2, cylinder_num=2)

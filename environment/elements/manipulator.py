@@ -16,6 +16,8 @@ class Manipulator():
         self.env = env
 
         self.position = position
+        self.init_pose = ((position[0], position[1], position[2]), (0., 0., 0., 1.))
+
         self.ur_base_pose = None
 
         self.ee_type = ee_type
@@ -48,12 +50,14 @@ class Manipulator():
 
     def _createBody(self):
         if self.chassis_type:
-            self.chassis = Mecanum(self.env, self.position)
-            self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, "type1")
+            pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
+            self.chassis = Mecanum(self.env, pose)
+            self.ur_base_pose = ((self.position[0], self.position[1], self.position[2]+0.1), p.getQuaternionFromEuler((0., 0, 0)))
+            self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, "type2")
             self.chassis_ur5_constraint = p.createConstraint(self.chassis.id, -1, self.ur5.id, -1, p.JOINT_FIXED, None,
                                                              self.chassis.position, [0., 0., 0.])
         else:
-            self.ur5 = UR5_new(self.env, self.ur_base_pose, 1, "type1")
+            self.ur5 = UR5_new(self.env, self.ur_base_pose, 1, "type2")
 
     def set_chassis(self, chassis_type):
         self.chassis_type = chassis_type
@@ -75,10 +79,11 @@ class Manipulator():
 
     def reset(self):
         if self.chassis:
+            self.chassis.set_init_pose(self.init_pose)
             self.chassis.reset()
 
         self.ur5.reset()
-        self.ee.release()
+        self.ur5.ee.release()
 
         self.reward = 0  # Cumulative returned rewards.
         self.action = 'idle'   # move, idle, grab

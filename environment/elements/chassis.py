@@ -1,6 +1,6 @@
 import pybullet as p
 import numpy as np
-from baseChassis import BaseChassis
+from .baseChassis import BaseChassis
 import os, sys
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -13,14 +13,14 @@ from controller.chassisController import MecanumController, DifferentialControll
 class Mecanum(BaseChassis):
     def __init__(self, env, pose):
         super().__init__(env, pose)
-        self._set_controller(MecanumController)
+        self._set_controller(MecanumController())
 
         self.lateral_velocity = 0.
         self.linear_velocity = 0.
         self.reached = False
 
     def _createBody(self):
-        path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/urdf/dingo-o.urdf")
+        path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/dingo-o.urdf")
         return p.loadURDF(path, self.position, useFixedBase=0)
 
     def step(self):
@@ -32,7 +32,7 @@ class Mecanum(BaseChassis):
         return self.state
 
     def move_to(self, position, orientation):
-        vx, vy, w, flag = self.controller.control_position(self.pose, position, orientation)
+        vx, vy, w, flag = self.controller.control_position(np.array(self.position), self.orientation, np.array(position), orientation)
         p.resetBaseVelocity(self.id, linearVelocity=[vx, vy, 0.], angularVelocity=[0., 0., w])
         # ?
         self.linear_velocity = vx * np.cos(self.orientation) + vy * np.sin(self.orientation)
