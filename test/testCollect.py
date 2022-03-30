@@ -1,11 +1,14 @@
 import pybullet as p
-
+import time
 import os, sys
+import numpy as np
+
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 
-from environment.grabEnv import Env
-import time
+from environment.collectEnv import Env
+
+
 
 def sync(i, start_time, timestep):
     """Syncs the stepped simulation with the wall-clock.
@@ -20,11 +23,13 @@ def sync(i, start_time, timestep):
     timestep : float
         Desired, wall-clock step of the simulation's rendering.
     """
-    if timestep > .04 or i%(int(1/(24*timestep))) == 0:
+    if timestep > .04 or i % (int(1 / (24 * timestep))) == 0:
         elapsed = time.time() - start_time
-        if elapsed < (i*timestep):
-            time.sleep(timestep*i - elapsed)
+        if elapsed < (i * timestep):
+            time.sleep(timestep * i - elapsed)
 
+def cal_distance(pos1, pos2):
+    return np.linalg.norm(pos1 - pos2)
 
 def get_action(robots, ROBOT, thingset, THING):
     # ROBOT = [[1, position_y, robot.action, robot.reward] ... ]
@@ -34,30 +39,31 @@ def get_action(robots, ROBOT, thingset, THING):
     ##### assign task for every robot
     result = [None for i in range(len(robots))]
     for i in range(len(robots)):
-        dis = 500.
         things = list(thingset)
+        distance = np.inf
         for j in range(len(things)):
-            if ROBOT[i][0] == THING[j][0] and (THING[j][2] - ROBOT[i][1]) >= -0.1 and (THING[j][2] - ROBOT[i][1]) <= 0.4:
-                if (THING[j][2] - ROBOT[i][1]) <= dis:
-                    dis = (THING[j][2] - ROBOT[i][1])
+            if ROBOT[i][0] == THING[j][0]:
+                dis = cal_distance(ROBOT[i][1], THING[j][1])
+                if dis < distance:
+                    distance = dis
                     result[i] = things[j]
     return result
 
 
-
-env = Env(robot_config=[{'type1': 0}, {'type2': 1}], thing_config=[{'cube':0}, {'cylinder':2}])
-episode = 10
+env = Env(robot_config=[{'type1': 1}, {'type2': 1}], thing_config=[{'cube': 2}, {'cylinder': 2}])
+episode = 3
 for k in range(episode):
-    obs = env.reset(speed = -0.2, cube_num = 0, cylinder_num = 2, margin=1.)    # margin: the distance between thing and next thing
+    obs = env.reset(cube_num=2, cylinder_num=2)
     start = time.time()
     step = 0
     done = False
-    reward = 0
-    while step < 100 or (not done):
+    R = 0
+    while not done:
         action = get_action(env.robots, obs[0], env.available_thing_ids_set, obs[1])
         obs, reward, done, info = env.step(action)
+        R += reward
         sync(step, start, env.TIMESTEP)
         step += 1
 env.close()
-    
+
 

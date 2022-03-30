@@ -53,6 +53,11 @@ class BaseChassis():
         self.target_position = position
         self.target_orientation = orientation
 
+    def get_position(self):
+        position, _ = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)
+        self.position = position
+        return self.position
+
     def step(self):
         pass
 
@@ -68,12 +73,6 @@ class BaseChassis():
         self.waypoint_pos = None
         self.waypoint_ori = None
         self.reset_pose(self.init_pose)
-
-    def get_position_and_orientation(self):
-        self.pose = self.env.p.getBasePositionAndOrientation(self.id)
-        self.position = self.pose[0]
-        self.orientation = cal_ori_from_qua(self.pose[1])
-        return self.position, self.orientation
 
     def reset_pose(self, pose):
         self.env.p.resetBasePositionAndOrientation(self.id, pose[0], pose[1])

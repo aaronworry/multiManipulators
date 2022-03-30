@@ -35,11 +35,9 @@ class Env():
         self.num_things = sum(sum(g.values()) for g in self.thing_config)
         self.thing_group_types = [next(iter(g.keys())) for g in self.thing_config]
 
-        self.robot_ids = []   # the model id
         self.robots = []      # the robot object
         self.robot_groups = []  # [[all object of robot1], [all object of robot2]]
 
-        self.thing_ids = []
         self.things = []
         self.thing_groups = []
 
@@ -88,7 +86,6 @@ class Env():
 
         planeID = p.loadURDF("plane.urdf")
 
-        self.robot_ids = []
         self.robots = []
         self.robot_groups = [[] for _ in range(len(self.robot_config))]
         for robot_group_index, g in enumerate(self.robot_config):
@@ -105,10 +102,8 @@ class Env():
                 #box = BOX(self, [x, 0.6 - kk * 1.2, 0.])
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
-                self.robot_ids.append(robot.id)
                 
 
-        self.thing_ids = []
         self.things = []
         self.thing_groups = [[] for _ in range(len(self.thing_config))]
         for thing_group_index, t in enumerate(self.thing_config):
@@ -122,7 +117,6 @@ class Env():
                 thing = Thing(self, [X, 1 + n, 0.5], thing_type)  # load things
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
-                self.thing_ids.append(thing.id)
 
         self.available_thing_ids_set = set()    # a set that include the task thing
         self.removed_thing_ids_set = set(self.things)  # not in task
@@ -130,7 +124,6 @@ class Env():
     def add_object(self, position, thing_type):
         thing = Thing(self, position, thing_type)
         self.things.append(thing)
-        self.thing_ids.append(thing.id)
         self.thing_groups[thing_type].append(thing)
         return thing
 
@@ -178,9 +171,9 @@ class Env():
         for thing in self.available_thing_ids_set:
             position = thing.get_position()
             if thing.type == 'cube':
-                THING.append([1, position[0], position[1]])
+                THING.append([1, position])
             elif thing.type == 'cylinder':
-                THING.append([2, position[0], position[1]])
+                THING.append([2, position])
         return [ROBOT, THING]
 
 
@@ -213,12 +206,8 @@ class Env():
         #for robot in self.robots:
         #    _sum_reward, _info, _step_reward = robot.reward()
         done = False
-        num_idle = 0
-        for robot in self.robots:
-            if robot.action == 'idle':
-                num_idle += 1
         
-        if num_idle == len(self.robots):
+        if len(self.available_thing_ids_set) == 0:
             done = True
 
         # Add ground truth robot state into info.
