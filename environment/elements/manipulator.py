@@ -70,6 +70,8 @@ class Manipulator():
             self.ee.remove()
         self.ee = Robotiq2F85(self.env, self.ur5, self.ur5.color)
 
+        # ee is in class ur5
+
 
     def reset(self):
         if self.chassis:

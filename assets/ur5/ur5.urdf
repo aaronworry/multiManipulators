@@ -234,6 +234,8 @@
       <origin rpy="0 0 0" xyz="-0.01 0 0"/>
     </collision>-->
   </link>
+
+  
   <transmission name="shoulder_pan_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="shoulder_pan_joint">
@@ -309,6 +311,8 @@
   <gazebo reference="ee_link">
     <selfCollide>true</selfCollide>
   </gazebo>
+  
+
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
   <link name="base"/>
   <joint name="base_link-base_fixed_joint" type="fixed">
@@ -327,10 +331,14 @@
     <parent link="wrist_3_link"/>
     <child link="tool0"/>
   </joint>
+
+  <!--
   <link name="world"/>
   <joint name="world_joint" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
     <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
   </joint>
+  -->
+  
 </robot>
