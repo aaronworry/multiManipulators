@@ -2,6 +2,7 @@ import pybullet as p
 import time
 import os, sys
 import numpy as np
+import pdb
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
@@ -56,7 +57,9 @@ env = Env(robot_config=[{'type1': 0}, {'type2': 1}], thing_config=[{'cube': 0}, 
 episode = 3
 for k in range(episode):
     obs = env.reset(cube_num=2, cylinder_num=2)
+    # time.sleep(100)
     start = time.time()
+
     step = 0
     done = False
     R = 0

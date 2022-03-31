@@ -26,7 +26,7 @@ class MecanumController():
         vx = v * delta_position[0] / distance
         vy = v * delta_position[1] / distance
         w = delta_orientation
-        if distance < 0.4:
+        if distance < 0.8:
             if abs(w) < 0.2:
                 return 0., 0., 0., True
             else:

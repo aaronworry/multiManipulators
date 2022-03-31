@@ -20,6 +20,7 @@ class Env():
         num_thing:   max number of each tye things
     '''
     def __init__(self, display=True, hz=240, robot_config=None, thing_config=None, env_name='collect'):
+        self.planeID = None
         self.robot_config = robot_config
         self.thing_config = thing_config
         self.env_name = env_name
@@ -87,7 +88,7 @@ class Env():
 
     def _create_env(self):
 
-        planeID = p.loadURDF("plane.urdf")
+        self.planeID = p.loadURDF("plane.urdf")
 
         self.robots = []
         self.robot_groups = [[] for _ in range(len(self.robot_config))]

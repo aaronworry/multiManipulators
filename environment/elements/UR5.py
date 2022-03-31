@@ -364,7 +364,7 @@ class UR5_new():
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_lower_limits = [x[8] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_upper_limits = [x[9] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
-        self.home_config = [-np.pi, -np.pi / 2, np.pi / 2, -np.pi / 2, -np.pi / 2, 0]
+        self.home_config = [-np.pi/2, 2 * np.pi / 3, np.pi / 2, -np.pi / 2, -np.pi / 2, 0]
 
         self.target_joint_values = self.home_config
 
@@ -579,5 +579,5 @@ class UR5_new():
     def set_arm_joints(self, joint_values):
         set_joint_positions(self.id, self.GROUP_INDEX['arm'], joint_values)
         self.control_arm_joints(joint_values=joint_values)
-        if self.ee is not None:
-            self.ee.update_ee_pose()
+        # if self.ee is not None:
+        #     self.ee.update_ee_pose()

@@ -15,6 +15,9 @@ class Mecanum(BaseChassis):
         super().__init__(env, pose)
         self._set_controller(MecanumController())
 
+        self.fix_flag = False
+        self.constrain_ground = None
+
         self.lateral_velocity = 0.
         self.linear_velocity = 0.
         self.reached = False
@@ -22,6 +25,22 @@ class Mecanum(BaseChassis):
     def _createBody(self):
         path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/dingo-o.urdf")
         return p.loadURDF(path, self.position, useFixedBase=0)
+
+    def fixed(self):
+        if not self.fix_flag:
+            self.fix_flag = True
+            position = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)[0]
+            self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None,
+                                                         position, [0., 0., 0.])
+
+    def moved(self):
+        if self.fix_flag:
+            self.fix_flag = False
+        if self.constrain_ground:
+            p.removeConstraint(self.constrain_ground, physicsClientId=self.env.client)
+            self.constrain_ground = None
+
+
 
     def step(self):
         self.update()

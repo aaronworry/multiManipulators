@@ -16,7 +16,7 @@ class Manipulator():
         self.env = env
 
         self.position = position
-        self.init_pose = ((position[0], position[1], position[2]), (0., 0., 0., 1.))
+        self.init_pose = None
 
         self.ur_base_pose = None
 
@@ -51,11 +51,12 @@ class Manipulator():
     def _createBody(self):
         if self.chassis_type:
             pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
+            self.init_pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
             self.chassis = Mecanum(self.env, pose)
             self.ur_base_pose = ((self.position[0], self.position[1], self.position[2]+0.1), p.getQuaternionFromEuler((0., 0, 0)))
             self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, "type2")
             self.chassis_ur5_constraint = p.createConstraint(self.chassis.id, -1, self.ur5.id, -1, p.JOINT_FIXED, None,
-                                                             self.chassis.position, [0., 0., 0.])
+                                                             [0., 0., 0.1], [0., 0., 0.])
         else:
             self.ur5 = UR5_new(self.env, self.ur_base_pose, 1, "type2")
 
@@ -92,6 +93,7 @@ class Manipulator():
     def move_collect(self, thing):
         if self.action == 'idle' and thing:
             self.chassis.set_target(thing.get_position(), self.chassis.orientation)
+            self.chassis.moved()
             self.ur5.step()
             self.action = 'move'
             self.last_action = 'idle'
@@ -102,6 +104,7 @@ class Manipulator():
             if self.chassis.reached:
                 self.action = 'grab'
                 self.last_action = 'move'
+                self.chassis.fixed()
         elif self.action == 'grab':
             self.ur5.place_position = np.array([self.chassis.position[0] - 0.2 * np.cos(self.chassis.orientation), self.chassis.position[0] - 0.2 * np.sin(self.chassis.orientation), 0.6])
             self.ur5.pick_and_place_FSM(thing)
