@@ -235,7 +235,7 @@
     </collision>-->
   </link>
 
-  
+
   <transmission name="shoulder_pan_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="shoulder_pan_joint">
@@ -289,6 +289,7 @@
     <actuator name="wrist_3_motor">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
+  
   </transmission>
   <gazebo reference="shoulder_link">
     <selfCollide>true</selfCollide>
@@ -311,7 +312,7 @@
   <gazebo reference="ee_link">
     <selfCollide>true</selfCollide>
   </gazebo>
-  
+
 
   <!-- ROS base_link to UR 'Base' Coordinates transform -->
   <link name="base"/>

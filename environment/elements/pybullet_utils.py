@@ -645,18 +645,25 @@ def forward_kinematics(body, joints, positions, eef_link=None):
     return eef_pose
 
 
-def inverse_kinematics(body, eef_link, position, orientation=None):
+def inverse_kinematics(body, eef_link, position, lowerlimits, upperlimits, jointranges, orientation=None):
     if orientation is None:
         jv = p.calculateInverseKinematics(bodyUniqueId=body,
                                           endEffectorLinkIndex=eef_link,
                                           targetPosition=position,
+                                          lowerLimits=lowerlimits,
+                                          upperLimits=upperlimits,
+                                          jointRanges=jointranges,
                                           residualThreshold=1e-3)
     else:
         jv = p.calculateInverseKinematics(bodyUniqueId=body,
                                           endEffectorLinkIndex=eef_link,
                                           targetPosition=position,
                                           targetOrientation=orientation,
+                                          lowerLimits=lowerlimits,
+                                          upperLimits=upperlimits,
+                                          jointRanges=jointranges,
                                           residualThreshold=1e-3)
+
     return jv
 
 

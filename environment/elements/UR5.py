@@ -292,25 +292,14 @@ class UR5_new():
     }
 
     GROUP_INDEX = {
-        'arm': [1, 2, 3, 4, 5, 6],
+        'arm': [0, 1, 2, 3, 4, 5],
         'gripper': None
     }
 
-    INDEX_NAME_MAP = {
-        0: 'world_joint',
-        1: 'shoulder_pan_joint',
-        2: 'shoulder_lift_joint',
-        3: 'elbow_joint',
-        4: 'wrist_1_joint',
-        5: 'wrist_2_joint',
-        6: 'wrist_3_joint',
-        7: 'ee_fixed_joint',
-        8: 'wrist_3_link-tool0_fixed_joint',
-        9: 'base_link-base_fixed_joint'
-    }
 
-    LOWER_LIMITS = [-2 * pi, -2 * pi, -pi, -2 * pi, -2 * pi, -2 * pi]
-    UPPER_LIMITS = [2 * pi, 2 * pi, pi, 2 * pi, 2 * pi, 2 * pi]
+    LOWER_LIMITS = [-np.pi, -2.3562, -np.pi, -17, -17, -17]
+    UPPER_LIMITS = [np.pi, -0.523, np.pi, 17, 17, 17]
+    JOINT_RANGES = [2 * np.pi, 1.8332, 2 * np.pi, 34, 34, 34]
     MAX_VELOCITY = [3.15, 3.15, 3.15, 3.2, 3.2, 3.2]
     MAX_FORCE = [150.0, 150.0, 150.0, 28.0, 28.0, 28.0]
 
@@ -319,7 +308,7 @@ class UR5_new():
     RESET = [0, -1, 1, 0.5, 1, 0]
     EEF_LINK_INDEX = 7
 
-    def __init__(self, env, pose, fix, rtype, velocity=1.0, enabled=True, acceleration=2.0, training=True):
+    def __init__(self, env, pose, fix, rtype, velocity=0.8, enabled=True, acceleration=1.0, training=True):
 
         self.velocity = velocity
         self.acceleration = acceleration
@@ -364,7 +353,7 @@ class UR5_new():
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_lower_limits = [x[8] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
         self._robot_joint_upper_limits = [x[9] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
-        self.home_config = [-np.pi/2, 2 * np.pi / 3, np.pi / 2, -np.pi / 2, -np.pi / 2, 0]
+        self.home_config = [0., - np.pi/3, np.pi/2, -np.pi / 2, -np.pi / 2, np.pi/2]
 
         self.target_joint_values = self.home_config
 
@@ -409,7 +398,7 @@ class UR5_new():
         elif self.action == 'goToGrab':
             # move to the pose that ur can grab something
             self.step()
-            if distance(self.thing.get_position(), self.ee.get_position()) <= 0.2:
+            if distance(self.thing.get_position(), self.ee.get_position()) <= 0.4:
                 self.action = 'grab'
                 self.last_action = 'goToGrab'
 
@@ -422,7 +411,7 @@ class UR5_new():
                     self.last_action = 'grab'
             elif self.type == 'type2':
                 self.ee.still()
-                if distance(self.thing.get_position(), self.ee.get_position()) <= 0.2:
+                if distance(self.thing.get_position(), self.ee.get_position()) <= 0.4:
                     self.ee.grab_thing(self.thing)
                     self.action = 'closeGripper'
                     self.last_action = 'grab'
@@ -440,7 +429,7 @@ class UR5_new():
             # print(self.action)
             # go to the place pose
             self.step()
-            if distance(self.place_position, self.ee.get_position()) <= 0.2:  # 到达
+            if distance(self.place_position, self.ee.get_position()) <= 0.4:  # 到达
                 self.action = 'place'
                 self.last_action = 'backToPlace'
                 if self.type == 'type2':
@@ -546,7 +535,10 @@ class UR5_new():
         self.set_arm_joints(self.inverse_kinematics(position=pos))
 
     def inverse_kinematics(self, position, orientation=None):
-        return inverse_kinematics(self.id, self.EEF_LINK_INDEX, position, orientation)
+        targetPositionsJoints = inverse_kinematics(self.id, self.EEF_LINK_INDEX, position, self.LOWER_LIMITS, self.UPPER_LIMITS, self.JOINT_RANGES, orientation)
+        joints = np.float32(targetPositionsJoints)
+        joints[1:-1] = (joints[1:-1] + np.pi) % (2 * np.pi) - np.pi
+        return joints
 
     def forward_kinematics(self, joint_values):
         return forward_kinematics(self.id, self.GROUP_INDEX['arm'], joint_values, self.EEF_LINK_INDEX)
