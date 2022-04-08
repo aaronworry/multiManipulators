@@ -96,10 +96,10 @@ class Env():
             robot_type, count = next(iter(g.items()))
             for kk in range(count):
                 if robot_type == "type1":
-                    Y = -1
+                    Y = -1 - kk
                 elif robot_type == "type2":
-                    Y = 1
-                robot = Manipulator(self, [- kk * 1.5, Y, 0.], robot_type)  # set the pose of ur
+                    Y = 1 + kk
+                robot = Manipulator(self, [0., Y, 0.], robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
                 
@@ -109,12 +109,13 @@ class Env():
         for thing_group_index, t in enumerate(self.thing_config):
             thing_type, count = next(iter(t.items()))
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.
-            for n in range(2):
+            i = 0
+            for n in range(10):
                 if thing_type == 'cylinder':
                     Y = 1
                 elif thing_type == 'cube':
                     Y = -1
-                thing = Thing(self, [1+n, Y, 0.5], thing_type)  # load things
+                thing = Thing(self, [1+(n%5), Y + (n//5) * Y, 0.], thing_type)  # load things
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
 
@@ -181,12 +182,15 @@ class Env():
         i = 0
         j = 0
         for thing in self.available_thing_ids_set:
+            thing.reset([thing.init_position,[0., 0., 0., 1.]])
+            """
             if thing.type == 'cube':
                 thing.reset([[1.5+i, -1, 0.5],[0., 0., 0., 1.]])
                 i += 1
             elif thing.type == 'cylinder':
                 thing.reset([[1.5+j, 1, 0.5],[0., 0., 0., 1.]])
                 j += 1
+            """
 
     @property
     def info(self):

@@ -22,6 +22,7 @@ class Manipulator():
 
         self.ee_type = ee_type
         self.chassis_type = chassis_type
+        self.type = ee_type
 
         self.ee = None
         self.chassis = None
@@ -55,11 +56,11 @@ class Manipulator():
             self.init_pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
             self.chassis = Mecanum(self.env, pose)
             self.ur_base_pose = ((self.position[0], self.position[1], self.position[2]+0.1), p.getQuaternionFromEuler((0., 0, 0)))
-            self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, "type2")
+            self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, self.type)
             self.chassis_ur5_constraint = p.createConstraint(self.chassis.id, -1, self.ur5.id, -1, p.JOINT_FIXED, None,
                                                              [0., 0., 0.1], [0., 0., 0.])
         else:
-            self.ur5 = UR5_new(self.env, self.ur_base_pose, 1, "type2")
+            self.ur5 = UR5_new(self.env, self.ur_base_pose, 1, self.type)
 
     def set_chassis(self, chassis_type):
         self.chassis_type = chassis_type

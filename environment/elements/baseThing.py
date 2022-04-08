@@ -12,6 +12,7 @@ class Thing():
         self.env = env
         self.type = thing_type
         self.position = position
+        self.init_position = position
         self.finished = False
         self.id = self._createBody()
         self.color_name = color

@@ -53,10 +53,10 @@ def get_action(robots, ROBOT, thingset, THING):
     return result
 
 
-env = Env(robot_config=[{'type1': 0}, {'type2': 1}], thing_config=[{'cube': 0}, {'cylinder': 2}])
+env = Env(robot_config=[{'type1': 2}, {'type2': 2}], thing_config=[{'cube': 10}, {'cylinder': 10}])
 episode = 3
 for k in range(episode):
-    obs = env.reset(cube_num=2, cylinder_num=2)
+    obs = env.reset(cube_num=10, cylinder_num=10)
     # time.sleep(100)
     start = time.time()
 
