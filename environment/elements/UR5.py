@@ -324,6 +324,7 @@ class UR5_new():
 
         self.action = 'idle'
         self.last_action = 'idle'
+        self.waitNum = 0
 
         self.pick_pose = None
         self.place_pose = None
@@ -451,14 +452,23 @@ class UR5_new():
                 self._reward = self.ee.throw_thing()
             p.resetBaseVelocity(self.thing.id, linearVelocity=[0., 0., 0.], angularVelocity=[0., 0., 0.],
                                 physicsClientId=self.env.client)
+            p.resetBasePositionAndOrientation(self.thing.id, [-10, -10, 5], [0., 0., 0., 1.], physicsClientId=self.env.client)
             self.action = 'idle'
             self.last_action = 'place'
             self.pick_pose = None
+            self.grab_finished = True
             self.working = False
             self.thing = None
-            self.grab_finished = True
             self.target_joint_values = self.home_config
-
+        """
+        elif self.action == 'waiting':
+            self.waitNum += 1
+            if self.waitNum >= 480:
+                self.waitNum = 0
+                
+                self.action = 'idle'
+                self.last_action = 'waiting'
+        """
 
 
     def compute_next_subtarget_joints(self):

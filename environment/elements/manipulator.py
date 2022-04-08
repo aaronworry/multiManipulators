@@ -42,6 +42,7 @@ class Manipulator():
 
         self.pick_pose = None   # the pose before it grab the task
         self.place_pose = None
+        self.waitNum = 0
 
         self.target_position = None
         self.move_flag = True
@@ -93,7 +94,6 @@ class Manipulator():
     def move_collect(self, thing):
         if self.action == 'idle' and thing:
             self.chassis.set_target(thing.get_position(), self.chassis.orientation)
-            self.chassis.moved()
             self.ur5.step()
             self.action = 'move'
             self.last_action = 'idle'
@@ -111,8 +111,16 @@ class Manipulator():
             if self.ur5.grab_finished:
                 self.env.available_thing_ids_set.remove(thing)
                 self.env.removed_thing_ids_set.add(thing)
+                self.action = 'waiting'
+                self.last_action = 'grab'
+        elif self.action == 'waiting':
+            self.waitNum += 1
+            self.ur5.step()
+            if self.waitNum >= 300:
+                self.waitNum = 0
+                self.chassis.moved()
                 self.action = 'idle'
-                self.last_action = 'move'
+                self.last_action = 'waiting'
 
 
     def state(self):
