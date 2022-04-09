@@ -9,10 +9,10 @@ import time
 import quaternion
 
 
-SUCTION_BASE_URDF = os.path.join(os.path.dirname(__file__),'../assets/ur5_defi/suction/suction-base.urdf')
-SUCTION_HEAD_URDF = os.path.join(os.path.dirname(__file__),'../assets/ur5_defi/suction/suction-head.urdf')
-ROBOTIQ_BASE_URDF = os.path.join(os.path.dirname(__file__), '../assets/ur5_defi/gripper/robotiq_2f_85.urdf')
-ROBOTIQ_BASE_URDF_new = os.path.join(os.path.dirname(__file__), '../../assets/ur5_defi/gripper/robotiq_2f_85.urdf')
+SUCTION_BASE_URDF = os.path.join(os.path.dirname(__file__),'../../assets/ur5_defi/suction/suction-base.urdf')
+SUCTION_HEAD_URDF = os.path.join(os.path.dirname(__file__),'../../assets/ur5_defi/suction/suction-head.urdf')
+ROBOTIQ_BASE_URDF = os.path.join(os.path.dirname(__file__), '../../assets/ur5_defi/gripper/robotiq_2f_85.urdf')
+ROBOTIQ_BASE_URDF_new = os.path.join(os.path.dirname(__file__), '../../assets/gripper/robotiq_2f_85.urdf')
 
 
 class Robotiq85():
@@ -274,34 +274,34 @@ class Robotiq2F85():
 
 
 class Suction():
-    def __init__(self, env, robot, ee, obj_ids):
+    def __init__(self, env, robot, obj_ids):
         self.env = env   # environment
         self.position = None
+        self.robot = robot
 
-        self.orientation = np.asarray((0, 0, 0, 1))
         # bind the end_effector with UR
-        pose = ((0.487, 0.109, 0.438), p.getQuaternionFromEuler((np.pi, 0, 0)))
+        pose = self.robot.get_end_effector_pose()
         self.id_base = p.loadURDF(SUCTION_BASE_URDF, pose[0], pose[1], physicsClientId=self.env.client)
+        orientation = (0., -np.pi / 2, 0.)
         p.createConstraint(
-            parentBodyUniqueId=robot,
-            parentLinkIndex=ee,
+            parentBodyUniqueId=self.robot.id,
+            parentLinkIndex=7,
             childBodyUniqueId=self.id_base,
             childLinkIndex=-1,
             jointType=p.JOINT_FIXED,
             jointAxis=(0, 0, 0),
             parentFramePosition=(0, 0, 0),
-            childFramePosition=(0, 0, 0.01), physicsClientId=self.env.client)
-        pose = ((0.487, 0.109, 0.347), p.getQuaternionFromEuler((np.pi, 0, 0)))
+            childFramePosition=(0, 0, 0.01), childFrameOrientation=p.getQuaternionFromEuler(orientation), physicsClientId=self.env.client)
         self.id_body = p.loadURDF(SUCTION_HEAD_URDF, pose[0], pose[1], physicsClientId=self.env.client)
         constraint_id = p.createConstraint(
-            parentBodyUniqueId=robot,
-            parentLinkIndex=ee,
+            parentBodyUniqueId=self.robot.id,
+            parentLinkIndex=7,
             childBodyUniqueId=self.id_body,
             childLinkIndex=-1,
             jointType=p.JOINT_FIXED,
             jointAxis=(0, 0, 0),
             parentFramePosition=(0, 0, 0),
-            childFramePosition=(0, 0, -0.08), physicsClientId=self.env.client)
+            childFramePosition=(0, 0, -0.08), childFrameOrientation=p.getQuaternionFromEuler(orientation), physicsClientId=self.env.client)
         p.changeConstraint(constraint_id, maxForce=50, physicsClientId=self.env.client)
 
         # things that can be grabed in the task, maybe not use?
@@ -329,6 +329,11 @@ class Suction():
 
         # the thing EE will grab or has grabed
         self.thing = None
+
+    def still(self):
+        pass
+
+
 
     def get_position(self):
         # get the position of EE
@@ -358,9 +363,6 @@ class Suction():
         obj_to_body = p.multiplyTransforms(world_to_body[0], world_to_body[1], obj_pose[0], obj_pose[1])
         self.contact_constraint = p.createConstraint(parentBodyUniqueId=self.id_body, parentLinkIndex=-1, childBodyUniqueId=thing.id, childLinkIndex=-1, jointType=p.JOINT_FIXED, jointAxis=None, parentFramePosition=obj_to_body[0], childFramePosition=[0., 0., 0.], physicsClientId=self.env.client)
         self.activated = True
-        # change the set
-        self.env.available_thing_ids_set.remove(self.thing)
-        self.env.removed_thing_ids_set.add(self.thing)
 
     def throw_thing(self):
 

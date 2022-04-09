@@ -27,6 +27,8 @@ class Env():
         self.hz = hz
         self.TIMESTEP = 1. / self.hz
 
+        np.random.seed(5)
+
         self.conveyor_speed = 0
 
         if self.robot_config is None:
@@ -94,14 +96,24 @@ class Env():
         self.robot_groups = [[] for _ in range(len(self.robot_config))]
         for robot_group_index, g in enumerate(self.robot_config):
             robot_type, count = next(iter(g.items()))
+            i = 0
             for kk in range(count):
                 if robot_type == "type1":
-                    Y = -1 - kk
+                    Y = -0.5 - kk
+                    X = 0
+                    # if i > 0:
+                    #     Y = -0.3
+                    #     X = 1.8
                 elif robot_type == "type2":
-                    Y = 1 + kk
-                robot = Manipulator(self, [0., Y, 0.], robot_type)  # set the pose of ur
+                    Y = 0.5 + kk
+                    X = 0
+                    # if i > 0:
+                    #     Y = 0.7
+                    #     X = 2.7
+                robot = Manipulator(self, [X, Y, 0.], robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
+                i += 1
                 
 
         self.things = []
@@ -116,6 +128,9 @@ class Env():
                 elif thing_type == 'cube':
                     Y = -1
                 thing = Thing(self, [1+(n%5), Y + (n//5) * Y, 0.], thing_type)  # load things
+                # a = (np.random.rand() - 0.5) * 4 + 3
+                # b = (np.random.rand() - 0.5) * 2.6
+                # thing = Thing(self, [a, b, 0.], thing_type)
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
 

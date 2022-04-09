@@ -348,7 +348,11 @@ class UR5_new():
         '''
         ur5_path = os.path.join(os.path.dirname(__file__), "../../assets/ur5/ur5.urdf")
         self.id = p.loadURDF(ur5_path, self.pose[0], self.pose[1], flags=p.URDF_USE_SELF_COLLISION, useFixedBase = fix)
-        self.ee = Robotiq2F85(self.env, self, self.color)
+        if self.type == 'type1':
+            self.ee = Suction(self.env, self, self.env.things)
+        else:
+            self.ee = Robotiq2F85(self.env, self, self.color)
+
 
         robot_joint_info = [p.getJointInfo(self.id, i, physicsClientId=self.env.client) for i in range(p.getNumJoints(self.id))]
         self._robot_joint_indices = [x[0] for x in robot_joint_info if x[2] == p.JOINT_REVOLUTE]
@@ -405,16 +409,18 @@ class UR5_new():
 
         elif self.action == 'grab':
             if self.type == 'type1':
-                if self.ee.detect_collision_with_thing(self.thing):
+                # if self.ee.detect_collision_with_thing(self.thing):
+                #     self.ee.grab_thing(self.thing)
+                # if self.ee.check_grasp():
+                if distance(self.thing.get_position(), self.ee.get_position()) <= 0.4:
                     self.ee.grab_thing(self.thing)
-                if self.ee.check_grasp():
-                    self.action = 'backToPlace'
+                    self.action = 'place'
                     self.last_action = 'grab'
             elif self.type == 'type2':
                 self.ee.still()
                 if distance(self.thing.get_position(), self.ee.get_position()) <= 0.4:
                     self.ee.grab_thing(self.thing)
-                    self.action = 'closeGripper'
+                    self.action = 'place'
                     self.last_action = 'grab'
         elif self.action == 'closeGripper':
             self.ee.close()

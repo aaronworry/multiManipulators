@@ -53,22 +53,25 @@ def get_action(robots, ROBOT, thingset, THING):
     return result
 
 
-env = Env(robot_config=[{'type1': 2}, {'type2': 2}], thing_config=[{'cube': 10}, {'cylinder': 10}])
+env = Env(robot_config=[{'type1': 1}, {'type2': 1}], thing_config=[{'cube': 10}, {'cylinder': 10}])
 episode = 3
 for k in range(episode):
     obs = env.reset(cube_num=10, cylinder_num=10)
-    # time.sleep(100)
+
     start = time.time()
 
     step = 0
     done = False
     R = 0
     while not done:
+        # time.sleep(100)
         action = get_action(env.robots, obs[0], env.available_thing_ids_set, obs[1])
         obs, reward, done, info = env.step(action)
         R += reward
         sync(step, start, env.TIMESTEP)
         step += 1
+        # if step >= 5:
+        #    time.sleep(100)
 env.close()
 
 
