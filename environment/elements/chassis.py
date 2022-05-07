@@ -26,12 +26,14 @@ class Mecanum(BaseChassis):
         path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/dingo-o.urdf")
         return p.loadURDF(path, self.position, useFixedBase=0)
 
-    def fixed(self):
+    def fixed(self, pose=None):
         if not self.fix_flag:
             self.fix_flag = True
-            position = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)[0]
-            self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None,
-                                                         position, [0., 0., 0.])
+            if pose is None:
+                position = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)[0]
+                self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None, position, [0., 0., 0.])
+            else:
+                self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None, pose[0], [0., 0., 0.], pose[1])
 
     def moved(self):
         if self.fix_flag:

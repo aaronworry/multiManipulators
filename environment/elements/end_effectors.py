@@ -18,12 +18,12 @@ ROBOTIQ_BASE_URDF_new = os.path.join(os.path.dirname(__file__), '../../assets/gr
 class Robotiq85():
     def __init__(self, env, robot, ee, obj_ids):
         self.env = env
-        orientation = (0., -np.pi/2, 0.)
+        orientation = (0., np.pi/2, 0.)
         self.open_close_flag = False
         self.orientation = np.asarray(p.getQuaternionFromEuler(orientation))
         pose = ((0.5, 0.5, 3), p.getQuaternionFromEuler((np.pi, 0, 0)))
-        self.id = p.loadURDF(ROBOTIQ_BASE_URDF, pose[0], pose[1], physicsClientId=self.env.client)
-        p.createConstraint(parentBodyUniqueId=robot,
+        self.id = p.loadURDF(ROBOTIQ_BASE_URDF_new, pose[0], pose[1], physicsClientId=self.env.client)
+        self.constraint_id = p.createConstraint(parentBodyUniqueId=robot,
                            parentLinkIndex=ee,
                            childBodyUniqueId=self.id,
                            childLinkIndex=-1,
@@ -68,10 +68,36 @@ class Robotiq85():
                             "robotiq_2f_85_left_follower_joint",
                             "robotiq_2f_85_left_spring_link_joint"]
         self.mimic_multiplier = [-1, 1, 1, -1, 1]
+        self.open_theta = 0.835
+        self.close_theta = 0.835
+        self.open_gripper()
+
+        self.hold_on_thread = Thread(target=self.thread_hold_on)
+        self.hold_on_thread.daemon = True
+        self.hold_on_thread.start()
+
+    def thread_hold_on(self):
+        while True:
+            self.still()
+            time.sleep(0.01)
+
+    def remove(self):
+        p.removeConstraint(self.constraint_id, physicsClientId=self.env.client)
+        p.removeBody(self.id, physicsClientId=self.env.client)
 
     def still(self):
-        for joint_name in self.joints:
-            p.setJointMotorControl2(self.id, self.joints[joint_name].id, p.VELOCITY_CONTROL, targetVelocity=0, force=0)
+        # current_joint = p.getJointState(self.id, 1, physicsClientId=self.env.client)[0]
+        current_joint = self.target_theta
+        p.setJointMotorControlArray(
+            self.id,
+            [6, 3, 8, 5, 10],
+            p.POSITION_CONTROL,
+            [current_joint,
+             -current_joint,
+             -current_joint,
+             current_joint,
+             current_joint],
+            positionGains=np.ones(5))
 
     def get_position(self):
         # get the position of EE
@@ -80,16 +106,23 @@ class Robotiq85():
         return self.position
 
     def control_angle(self, angle, threshold):
-        gripper_opening_angle = 0.715 - math.asin((angle - 0.010) / 0.1143)  # angle calculation
-
+        # gripper_opening_angle = 0.715 - math.asin((angle - 0.010) / 0.1143)  # angle calculation
+        gripper_opening_angle = angle
         current_joint = p.getJointState(self.id, self.joints[self.gripper_main_control_joint_name].id, physicsClientId=self.env.client)[0]
-        different = gripper_opening_angle - current_joint
+        different = abs(gripper_opening_angle - current_joint)
         if different < threshold:
             self.open_close_flag = False
             self.still()
+            self.target_theta = angle
 
         # Move with constant velocity
-        step_joint = current_joint + 0.02
+        if gripper_opening_angle > current_joint:
+            step_joint = current_joint + 0.02
+        elif gripper_opening_angle < current_joint:
+            step_joint = current_joint - 0.02
+        else:
+            step_joint = current_joint
+        self.target_theta = step_joint
 
         p.setJointMotorControl2(self.id,
                                 self.joints[self.gripper_main_control_joint_name].id,
@@ -107,12 +140,12 @@ class Robotiq85():
     def close_gripper(self):
         if self.open_close_flag == False:
             self.open_close_flag = True
-        self.control_angle(0.06, 0.015)
+        self.control_angle(self.close_theta, 0.01)
 
     def open_gripper(self):
         if self.open_close_flag == False:
             self.open_close_flag = True
-        self.control_angle(0.085, 0.01)
+        self.control_angle(self.open_theta, 0.01)
 
     def grab_thing(self, thing):
         thing.finished = True
@@ -130,8 +163,8 @@ class Robotiq85():
                                                      childFramePosition=[0., 0., 0.], physicsClientId=self.env.client)
         self.activated = True
         # change the set
-        self.env.available_thing_ids_set.remove(self.thing)
-        self.env.removed_thing_ids_set.add(self.thing)
+        # self.env.available_thing_ids_set.remove(self.thing)
+        # self.env.removed_thing_ids_set.add(self.thing)
 
     def throw_thing(self):
 
@@ -154,15 +187,14 @@ class Robotiq85():
             self.activated = False
 
 class Robotiq2F85():
-    def __init__(self, env, robot, color):
+    def __init__(self, env, robot):
         self.robot = robot
         self.activated = False
         self.object = None
         self.env = env
         pose = self.robot.get_end_effector_pose()  # need code
         self.id = p.loadURDF(ROBOTIQ_BASE_URDF_new, pose[0], pose[1])
-        self.color = color
-        orientation = (0., -np.pi/2, 0.)
+        orientation = (0., 0., -np.pi/2) # (0., -np.pi/2, 0.)
         self.contact_constraint = None
         self.constraint = p.createConstraint(parentBodyUniqueId=self.robot.id,
                            parentLinkIndex=7,
@@ -171,7 +203,7 @@ class Robotiq2F85():
                            jointType=p.JOINT_FIXED,
                            jointAxis=(0, 0, 0),
                            parentFramePosition=(0, 0, 0),
-                           childFramePosition=(0, 0, 0.02),
+                           childFramePosition=(0, 0, 0.01),
                            childFrameOrientation=p.getQuaternionFromEuler(orientation), physicsClientId = self.env.client)
         self.setup()
 
@@ -282,7 +314,7 @@ class Suction():
         # bind the end_effector with UR
         pose = self.robot.get_end_effector_pose()
         self.id_base = p.loadURDF(SUCTION_BASE_URDF, pose[0], pose[1], physicsClientId=self.env.client)
-        orientation = (0., -np.pi / 2, 0.)
+        orientation = (0., 0., 0.)
         p.createConstraint(
             parentBodyUniqueId=self.robot.id,
             parentLinkIndex=7,
@@ -291,7 +323,8 @@ class Suction():
             jointType=p.JOINT_FIXED,
             jointAxis=(0, 0, 0),
             parentFramePosition=(0, 0, 0),
-            childFramePosition=(0, 0, 0.01), childFrameOrientation=p.getQuaternionFromEuler(orientation), physicsClientId=self.env.client)
+            childFramePosition=(0, 0, 0.01), childFrameOrientation=p.getQuaternionFromEuler(orientation),
+            physicsClientId=self.env.client)
         self.id_body = p.loadURDF(SUCTION_HEAD_URDF, pose[0], pose[1], physicsClientId=self.env.client)
         constraint_id = p.createConstraint(
             parentBodyUniqueId=self.robot.id,
@@ -301,7 +334,8 @@ class Suction():
             jointType=p.JOINT_FIXED,
             jointAxis=(0, 0, 0),
             parentFramePosition=(0, 0, 0),
-            childFramePosition=(0, 0, -0.08), childFrameOrientation=p.getQuaternionFromEuler(orientation), physicsClientId=self.env.client)
+            childFramePosition=(0, 0, -0.08), childFrameOrientation=p.getQuaternionFromEuler(orientation),
+            physicsClientId=self.env.client)
         p.changeConstraint(constraint_id, maxForce=50, physicsClientId=self.env.client)
 
         # things that can be grabed in the task, maybe not use?
@@ -314,21 +348,16 @@ class Suction():
         # the constraint between ee and thing
         self.contact_constraint = None
 
-        self.def_ignore = 0.035
-        self.def_threshold = 0.03
-        self.def_nb_anchors = 1
-
-        self.def_grip_item = None
-        self.def_grip_anchors = []
-
-        self.def_min_vetex = None
-        self.def_min_distance = None
-
-        self.init_grip_distance = None
-        self.init_grip_item = None
-
         # the thing EE will grab or has grabed
         self.thing = None
+
+    def remove(self):
+        # delete constraint
+        p.removeConstraint(self.constraint_id, physicsClientId=self.env.client)
+        p.removeConstraint(self.robot_constraint_id, physicsClientId=self.env.client)
+        # delete model
+        p.removeBody(self.id_body, physicsClientId=self.env.client)
+        p.removeBody(self.id_base, physicsClientId=self.env.client)
 
     def still(self):
         pass
@@ -356,13 +385,21 @@ class Suction():
         # create constraint when UR grab things
         thing.finished = True
         self.thing = thing
-        p.resetBaseVelocity(thing.id, linearVelocity=[0., 0., 0.], angularVelocity=[0., 0., 0.], physicsClientId=self.env.client)
+        p.resetBaseVelocity(thing.id, linearVelocity=[0., 0., 0.], angularVelocity=[0., 0., 0.],
+                            physicsClientId=self.env.client)
         body_pose = p.getLinkState(self.id_body, 0, physicsClientId=self.env.client)
         obj_pose = p.getBasePositionAndOrientation(thing.id, physicsClientId=self.env.client)
         world_to_body = p.invertTransform(body_pose[0], body_pose[1])
         obj_to_body = p.multiplyTransforms(world_to_body[0], world_to_body[1], obj_pose[0], obj_pose[1])
-        self.contact_constraint = p.createConstraint(parentBodyUniqueId=self.id_body, parentLinkIndex=-1, childBodyUniqueId=thing.id, childLinkIndex=-1, jointType=p.JOINT_FIXED, jointAxis=None, parentFramePosition=obj_to_body[0], childFramePosition=[0., 0., 0.], physicsClientId=self.env.client)
+        self.contact_constraint = p.createConstraint(parentBodyUniqueId=self.id_body, parentLinkIndex=-1,
+                                                     childBodyUniqueId=thing.id, childLinkIndex=-1,
+                                                     jointType=p.JOINT_FIXED, jointAxis=None,
+                                                     parentFramePosition=obj_to_body[0],
+                                                     childFramePosition=[0., 0., 0.], physicsClientId=self.env.client)
         self.activated = True
+        # change the set
+        # self.env.available_thing_ids_set.remove(self.thing)
+        # self.env.removed_thing_ids_set.add(self.thing)
 
     def throw_thing(self):
 
@@ -412,17 +449,7 @@ class Suction():
             if self.contact_constraint is not None:
                 p.removeConstraint(self.contact_constraint, physicsClientId=self.env.client)
                 self.contact_constraint = None
-                self.init_grip_distance = None
-                self.init_grip_item = None
 
-            # deformable object
-            if self.def_grip_anchors:
-                for anchor_id in self.def_grip_anchors:
-                    p.removeConstraint(anchor_id, physicsClientId=self.env.client)
-                self.def_grip_anchors = []
-                self.def_grip_item = None
-                self.def_min_vetex = None
-                self.def_min_distance = None
 
     def detect_contact(self):
         body, link = self.id_body, 0

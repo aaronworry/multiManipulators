@@ -5,17 +5,18 @@ import pybullet as p
 import time
 import pybullet_data
 from .end_effectors import Suction, Robotiq85, Robotiq2F85
-from .UR5 import UR5_new
+from .UR5 import UR5_new, UR5
 from .chassis import Mecanum, Differential
 from transforms3d import euler
 import collections
 from math import pi
 
 class Manipulator():
-    def __init__(self, env, position, ee_type = 'Suction', chassis_type = 'Mecanum'):
+    def __init__(self, env, position, ori, ee_type = 'Suction', chassis_type = 'Mecanum'):
         self.env = env
 
         self.position = position
+        self.ori = ori
         self.init_pose = None
 
         self.ur_base_pose = None
@@ -52,10 +53,11 @@ class Manipulator():
 
     def _createBody(self):
         if self.chassis_type:
-            pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
-            self.init_pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0, 0)))
+            pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0., self.ori)))
+            self.init_pose = ((self.position[0], self.position[1], self.position[2]), p.getQuaternionFromEuler((0., 0., self.ori)))
             self.chassis = Mecanum(self.env, pose)
-            self.ur_base_pose = ((self.position[0], self.position[1], self.position[2]+0.1), p.getQuaternionFromEuler((0., 0, 0)))
+            self.chassis.fixed()
+            self.ur_base_pose = ((self.position[0], self.position[1], self.position[2]+0.1), p.getQuaternionFromEuler((0., 0., self.ori + 0.)))
             self.ur5 = UR5_new(self.env, self.ur_base_pose, 0, self.type)
             self.chassis_ur5_constraint = p.createConstraint(self.chassis.id, -1, self.ur5.id, -1, p.JOINT_FIXED, None,
                                                              [0., 0., 0.1], [0., 0., 0.])
@@ -82,8 +84,10 @@ class Manipulator():
 
     def reset(self):
         if self.chassis:
+            self.chassis.moved()
             self.chassis.set_init_pose(self.init_pose)
-            self.chassis.reset()
+            self.chassis.fixed(self.init_pose)
+
 
         self.ur5.reset()
         self.ur5.ee.release()
@@ -93,25 +97,30 @@ class Manipulator():
         self.working = False
 
     def move_collect(self, thing):
-        if self.action == 'idle' and thing:
+        if self.action == 'idle' and thing and not self.thing:
+            self.chassis.fixed()
             self.chassis.set_target(thing.get_position(), self.chassis.orientation)
-            self.ur5.step()
+            # self.ur5.step()
             self.action = 'move'
             self.last_action = 'idle'
+            self.thing = thing
         elif self.action == 'move':
+            self.chassis.moved()
             self.chassis.step()
             self.position = self.chassis.position
-            self.ur5.step()
+            # self.ur5.step()
             if self.chassis.reached:
                 self.action = 'grab'
                 self.last_action = 'move'
                 self.chassis.fixed()
         elif self.action == 'grab':
-            self.ur5.place_position = np.array([self.chassis.position[0] - 0.3 * np.cos(self.chassis.orientation), self.chassis.position[0] - 0.3 * np.sin(self.chassis.orientation), self.chassis.position[2]+0.5])
             self.ur5.pick_and_place_FSM(thing)
-            if self.ur5.grab_finished:
-                self.env.available_thing_ids_set.remove(thing)
-                self.env.removed_thing_ids_set.add(thing)
+            if self.ur5.grab_finished and self.ur5.place_position is None:
+                self.ur5.place_position = np.array([self.chassis.position[0] - 0.3 * np.cos(self.chassis.orientation),
+                                                    self.chassis.position[0] - 0.3 * np.sin(self.chassis.orientation),
+                                                    self.chassis.position[2] + 0.5])
+
+            if self.thing not in self.env.available_thing_ids_set:
                 self.action = 'waiting'
                 self.last_action = 'grab'
         elif self.action == 'waiting':
@@ -122,6 +131,7 @@ class Manipulator():
                 self.chassis.moved()
                 self.action = 'idle'
                 self.last_action = 'waiting'
+                self.thing = None
 
 
     def state(self):
@@ -138,5 +148,3 @@ class Manipulator():
             info['success'] = 0
             return self.reward, info, 0
 
-    def get_ee_pose(self):
-        return p.getLinkState(self.ee.id_body, 0, physicsClientId=self.env.client)[0:2]

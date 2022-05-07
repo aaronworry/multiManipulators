@@ -110,7 +110,7 @@ class Env():
                     # if i > 0:
                     #     Y = 0.7
                     #     X = 2.7
-                robot = Manipulator(self, [X, Y, 0.], robot_type)  # set the pose of ur
+                robot = Manipulator(self, [X, Y, 0.], 0., robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
                 i += 1
@@ -122,7 +122,7 @@ class Env():
             thing_type, count = next(iter(t.items()))
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.
             i = 0
-            for n in range(10):
+            for n in range(2):
                 if thing_type == 'cylinder':
                     Y = 1
                 elif thing_type == 'cube':
@@ -161,6 +161,11 @@ class Env():
 
         for robot in self.robots:
             robot.reset()
+
+        time_step = 0
+        while time_step < 480:
+            p.stepSimulation(physicsClientId=self.client)
+            time_step += 1
 
         self.set_all_thing()
 
