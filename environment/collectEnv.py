@@ -169,6 +169,9 @@ class Env():
 
         self.set_all_thing()
 
+        for robot in self.robots:
+            robot.chassis.moved()
+
         
 
         #self.p.configureDebugVisualizer(p.COV_ENABLE_RENDERING, 1)
