@@ -94,8 +94,8 @@ class Env():
 
         self.robots = []
         self.robot_groups = [[] for _ in range(len(self.robot_config))]
-        PosList1 = [[0., 0.6, 0.], [2.6, 2., -np.pi/2], [4., -0.6, -np.pi], [1.4, -2., np.pi/2]]
-        PosList2 = [[0., -0.6, 0.], [1.4, 2., -np.pi/2], [4., 0.6, -np.pi], [2.6, -2., np.pi/2]]
+        PosList1 = [[-3., 0.6, 0.], [0.6, 3., -np.pi/2], [3., -0.6, -np.pi], [-0.6, -3., np.pi/2]]
+        PosList2 = [[-3., -0.6, 0.], [-0.6, 3., -np.pi/2], [3., 0.6, -np.pi], [0.6, -3., np.pi/2]]
         for robot_group_index, g in enumerate(self.robot_config):
             robot_type, count = next(iter(g.items()))
             i = 0
@@ -112,8 +112,14 @@ class Env():
 
         self.things = []
         self.thing_groups = [[] for _ in range(len(self.thing_config))]
-        poseListCube = []
-        poseListCylinder = []
+        theta1 = -np.pi/12
+        theta2 = np.pi/12
+        theta3 = np.pi/4
+        l1 = 2.0
+        l2 = 1.4
+        l3 = 0.8
+        poseListCube = [[l1*np.cos(theta1), l1*np.sin(theta1)], [l1*np.cos(theta1+np.pi/2), l1*np.sin(theta1+np.pi/2)], [l1*np.cos(theta1+np.pi), l1*np.sin(theta1+np.pi)], [l1*np.cos(theta1+3*np.pi/2), l1*np.sin(theta1+3*np.pi/2)], [l2*np.cos(theta2), l2*np.sin(theta2)], [l2*np.cos(theta2+np.pi/2), l2*np.sin(theta2+np.pi/2)], [l2*np.cos(theta2+np.pi), l2*np.sin(theta2+np.pi)], [l2*np.cos(theta2+3*np.pi/2), l2*np.sin(theta2+3*np.pi/2)], [l3*np.cos(theta3), l3*np.sin(theta3)], [l3*np.cos(theta3+np.pi), l3*np.sin(theta3+np.pi)]]
+        poseListCylinder = [[l1*np.cos(theta1+np.pi/4), l1*np.sin(theta1+np.pi/4)], [l1*np.cos(theta1+np.pi/2+np.pi/4), l1*np.sin(theta1+np.pi/2+np.pi/4)], [l1*np.cos(theta1+np.pi+np.pi/4), l1*np.sin(theta1+np.pi+np.pi/4)], [l1*np.cos(theta1+3*np.pi/2+np.pi/4), l1*np.sin(theta1+3*np.pi/2+np.pi/4)], [l2*np.cos(theta2+np.pi/4), l2*np.sin(theta2+np.pi/4)], [l2*np.cos(theta2+np.pi/2+np.pi/4), l2*np.sin(theta2+np.pi/2+np.pi/4)], [l2*np.cos(theta2+np.pi+np.pi/4), l2*np.sin(theta2+np.pi+np.pi/4)], [l2*np.cos(theta2+3*np.pi/2+np.pi/4), l2*np.sin(theta2+3*np.pi/2+np.pi/4)], [l3*np.cos(theta3+np.pi/2), l3*np.sin(theta3+np.pi/2)], [l3*np.cos(theta3+np.pi+np.pi/2), l3*np.sin(theta3+np.pi+np.pi/2)]]
         for thing_group_index, t in enumerate(self.thing_config):
             thing_type, count = next(iter(t.items()))
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.

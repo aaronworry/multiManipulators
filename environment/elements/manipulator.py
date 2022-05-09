@@ -85,8 +85,9 @@ class Manipulator():
     def reset(self):
         if self.chassis:
             self.chassis.moved()
-            self.chassis.set_init_pose(self.init_pose)
-            self.chassis.fixed(self.init_pose)
+            # self.chassis.set_init_pose(self.init_pose)
+            self.chassis.fixed(self.chassis.init_pose)
+            print(self.chassis.init_pose)
 
 
         self.ur5.reset()

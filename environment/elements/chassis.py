@@ -32,7 +32,7 @@ class Mecanum(BaseChassis):
             self.fix_flag = True
             if pose is None:
                 position = p.getBasePositionAndOrientation(self.id, physicsClientId=self.env.client)[0]
-                self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None, position, [0., 0., 0.])
+                self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None, position, [0., 0., 0.], self.init_pose[1])
             else:
                 self.constrain_ground = p.createConstraint(self.env.planeID, -1, self.id, -1, p.JOINT_FIXED, None, pose[0], [0., 0., 0.], pose[1])
 
