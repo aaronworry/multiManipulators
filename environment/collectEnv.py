@@ -225,10 +225,10 @@ class Env():
         p.disconnect(physicsClientId=self.client)
 
 
-    def step(self, action=None):
-        if action is not None:
-            for i in range(len(self.robots)):
-                self.robots[i].move_collect(action[i])
+    def step(self):
+        # if action is not None:
+        for i in range(len(self.robots)):
+            self.robots[i].move_collect()
         p.stepSimulation(physicsClientId=self.client)
 
         reward, info = 0, {}

@@ -30,7 +30,7 @@ def sync(i, start_time, timestep):
             time.sleep(timestep * i - elapsed)
 
 def cal_distance(pos1, pos2):
-    return np.linalg.norm(pos1 - pos2)
+    return np.linalg.norm(np.array(pos1) - np.array(pos2))
 
 def get_action(robots, ROBOT, thingset, THING):
     # ROBOT = [[1, position_y, robot.action, robot.reward] ... ]
@@ -52,12 +52,67 @@ def get_action(robots, ROBOT, thingset, THING):
                     result[i] = things[j]
     return result
 
+def init(robots, things):
+    R1 = set()
+    R2 = set()
+    T1 = set()
+    T2 = set()
+    for robot in robots:
+        if robot.type == 'type1':
+            R1.add(robot)
+        else:
+            R2.add(robot)
+    for thing in things:
+        if thing.type == 'cube':
+            T1.add(thing)
+        else:
+            T2.add(thing)
+    return R1, R2, T1, T2
+
+def allocate(robots, things):
+    # robots: a list, robot.thing == None
+    # things: a list, things not allocated
+    m = len(robots)
+    n = len(things)
+    result = set()
+    if m == 0 or n == 0:
+        return result
+    Map = np.zeros((m, n))
+    for j in range(n):
+        for i in range(m):
+            Map[i][j] = cal_distance(robots[i].chassis.get_position(), things[j].get_position())
+    while np.min(Map) < 1000.:
+        a, b = np.unravel_index(np.argmin(Map), Map.shape)
+        robots[a].thing = things[b]
+        result.add(things[b])
+        for j in range(n):
+            for i in range(m):
+                if j == b or i == a:
+                    Map[i][j] = np.inf
+    return result  # a set, things has been assigned
+
+def taskAs(T1, T2, R1, R2):
+    task1 = list(T1)
+    task2 = list(T2)
+    robot1 = []
+    robot2 = []
+    for item in R1:
+        if item.thing == None:
+            robot1.append(item)
+    for item in R2:
+        if item.thing == None:
+            robot2.append(item)
+    set1 = allocate(robot1, task1)
+    set2 = allocate(robot2, task2)
+    t1 = T1 - set1
+    t2 = T2 - set2
+    return t1, t2
 
 env = Env(robot_config=[{'type1': 1}, {'type2': 1}], thing_config=[{'cube': 2}, {'cylinder': 2}])
 episode = 3
 for k in range(episode):
     obs = env.reset(cube_num=2, cylinder_num=2)
-
+    R1, R2, T1, T2 = init(env.robots, env.available_thing_ids_set)
     start = time.time()
 
     step = 0
@@ -65,8 +120,9 @@ for k in range(episode):
     R = 0
     while not done:
         # time.sleep(100)
-        action = get_action(env.robots, obs[0], env.available_thing_ids_set, obs[1])
-        obs, reward, done, info = env.step(action)
+        # action = get_action(env.robots, obs[0], env.available_thing_ids_set, obs[1])
+        T1, T2 = taskAs(T1, T2, R1, R2)
+        obs, reward, done, info = env.step()
         R += reward
         sync(step, start, env.TIMESTEP)
         step += 1

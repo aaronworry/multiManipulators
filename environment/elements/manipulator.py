@@ -96,14 +96,14 @@ class Manipulator():
         self.action = 'idle'   # move, idle, grab
         self.working = False
 
-    def move_collect(self, thing):
-        if self.action == 'idle' and thing and not self.thing:
+    def move_collect(self):
+        if self.action == 'idle' and self.thing:
             self.chassis.fixed()
-            self.chassis.set_target(thing.get_position(), self.chassis.orientation)
+            self.chassis.set_target(self.thing.get_position(), self.chassis.orientation)
             # self.ur5.step()
             self.action = 'move'
             self.last_action = 'idle'
-            self.thing = thing
+            # self.thing = thing
         elif self.action == 'move':
             self.chassis.moved()
             self.chassis.step()
@@ -114,7 +114,7 @@ class Manipulator():
                 self.last_action = 'move'
                 self.chassis.fixed()
         elif self.action == 'grab':
-            self.ur5.pick_and_place_FSM(thing)
+            self.ur5.pick_and_place_FSM(self.thing)
             if self.ur5.grab_finished and self.ur5.place_position is None:
                 self.ur5.place_position = np.array([self.chassis.position[0] - 0.3 * np.cos(self.chassis.orientation),
                                                     self.chassis.position[0] - 0.3 * np.sin(self.chassis.orientation),
