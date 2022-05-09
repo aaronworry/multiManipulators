@@ -94,23 +94,17 @@ class Env():
 
         self.robots = []
         self.robot_groups = [[] for _ in range(len(self.robot_config))]
+        PosList1 = [[0., 0.6, 0.], [2.6, 2., -np.pi/2], [4., -0.6, -np.pi], [1.4, -2., np.pi/2]]
+        PosList2 = [[0., -0.6, 0.], [1.4, 2., -np.pi/2], [4., 0.6, -np.pi], [2.6, -2., np.pi/2]]
         for robot_group_index, g in enumerate(self.robot_config):
             robot_type, count = next(iter(g.items()))
             i = 0
             for kk in range(count):
                 if robot_type == "type1":
-                    Y = -0.5 - kk
-                    X = 0
-                    # if i > 0:
-                    #     Y = -0.3
-                    #     X = 1.8
+                    X, Y, o =PosList1[kk]
                 elif robot_type == "type2":
-                    Y = 0.5 + kk
-                    X = 0
-                    # if i > 0:
-                    #     Y = 0.7
-                    #     X = 2.7
-                robot = Manipulator(self, [X, Y, 0.], 0., robot_type)  # set the pose of ur
+                    X, Y, o =PosList2[kk]
+                robot = Manipulator(self, [X, Y, 0.], o, robot_type)  # set the pose of ur
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
                 i += 1
@@ -118,19 +112,18 @@ class Env():
 
         self.things = []
         self.thing_groups = [[] for _ in range(len(self.thing_config))]
+        poseListCube = []
+        poseListCylinder = []
         for thing_group_index, t in enumerate(self.thing_config):
             thing_type, count = next(iter(t.items()))
             # add 5 cube and 5 cylinder in the env, people can't see it. To decrease the time that reset() will speed.
             i = 0
-            for n in range(2):
+            for n in range(10):
                 if thing_type == 'cylinder':
-                    Y = 1
+                    a, b = poseListCylinder[n]
                 elif thing_type == 'cube':
-                    Y = -1
-                thing = Thing(self, [1+(n%5), Y + (n//5) * Y, 0.], thing_type)  # load things
-                # a = (np.random.rand() - 0.5) * 4 + 3
-                # b = (np.random.rand() - 0.5) * 2.6
-                # thing = Thing(self, [a, b, 0.], thing_type)
+                    a, b = poseListCube[n]
+                thing = Thing(self, [a, b, 0.], thing_type)
                 self.things.append(thing)
                 self.thing_groups[thing_group_index].append(thing)
 

@@ -18,12 +18,14 @@ ROBOTIQ_BASE_URDF_new = os.path.join(os.path.dirname(__file__), '../../assets/gr
 class Robotiq85():
     def __init__(self, env, robot, ee, obj_ids):
         self.env = env
+        self.robot = robot
         orientation = (0., np.pi/2, 0.)
         self.open_close_flag = False
         self.orientation = np.asarray(p.getQuaternionFromEuler(orientation))
-        pose = ((0.5, 0.5, 3), p.getQuaternionFromEuler((np.pi, 0, 0)))
+        # pose = ((0.5, 0.5, 3), p.getQuaternionFromEuler((np.pi, 0, 0)))
+        pose = self.robot.get_end_effector_pose()  # need code
         self.id = p.loadURDF(ROBOTIQ_BASE_URDF_new, pose[0], pose[1], physicsClientId=self.env.client)
-        self.constraint_id = p.createConstraint(parentBodyUniqueId=robot,
+        self.constraint_id = p.createConstraint(parentBodyUniqueId=robot.id,
                            parentLinkIndex=ee,
                            childBodyUniqueId=self.id,
                            childLinkIndex=-1,

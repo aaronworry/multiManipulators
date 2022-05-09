@@ -108,10 +108,10 @@ def taskAs(T1, T2, R1, R2):
     t2 = T2 - set2
     return t1, t2
 
-env = Env(robot_config=[{'type1': 1}, {'type2': 1}], thing_config=[{'cube': 2}, {'cylinder': 2}])
+env = Env(robot_config=[{'type1': 4}, {'type2': 4}], thing_config=[{'cube': 10}, {'cylinder': 10}])
 episode = 3
 for k in range(episode):
-    obs = env.reset(cube_num=2, cylinder_num=2)
+    obs = env.reset(cube_num=10, cylinder_num=10)
     R1, R2, T1, T2 = init(env.robots, env.available_thing_ids_set)
     start = time.time()
 

@@ -504,7 +504,7 @@ class UR5_new():
         if self.type == 'type1':
             self.ee = Suction(self.env, self, self.env.things)
         else:
-            self.ee = Robotiq85(self.env, self.id, 7, self.env.things)
+            self.ee = Robotiq85(self.env, self, 7, self.env.things)
             # self.ee = Robotiq2F85(self.env, self)
 
 

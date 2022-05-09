@@ -17,6 +17,7 @@ class Mecanum(BaseChassis):
 
         self.fix_flag = False
         self.constrain_ground = None
+        self.pose = pose
 
         self.lateral_velocity = 0.
         self.linear_velocity = 0.
@@ -24,7 +25,7 @@ class Mecanum(BaseChassis):
 
     def _createBody(self):
         path = os.path.join(os.path.dirname(__file__), "../../assets/dingo/dingo-o.urdf")
-        return p.loadURDF(path, self.position, useFixedBase=0)
+        return p.loadURDF(path, self.pose[0], self.pose[1], useFixedBase=0)
 
     def fixed(self, pose=None):
         if not self.fix_flag:
