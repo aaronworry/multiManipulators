@@ -317,7 +317,7 @@ class Suction():
         pose = self.robot.get_end_effector_pose()
         self.id_base = p.loadURDF(SUCTION_BASE_URDF, pose[0], pose[1], physicsClientId=self.env.client)
         orientation = (0., 0., 0.)
-        p.createConstraint(
+        self.robot_constraint_id = p.createConstraint(
             parentBodyUniqueId=self.robot.id,
             parentLinkIndex=7,
             childBodyUniqueId=self.id_base,
@@ -328,7 +328,7 @@ class Suction():
             childFramePosition=(0, 0, 0.01), childFrameOrientation=p.getQuaternionFromEuler(orientation),
             physicsClientId=self.env.client)
         self.id_body = p.loadURDF(SUCTION_HEAD_URDF, pose[0], pose[1], physicsClientId=self.env.client)
-        constraint_id = p.createConstraint(
+        self.constraint_id = p.createConstraint(
             parentBodyUniqueId=self.robot.id,
             parentLinkIndex=7,
             childBodyUniqueId=self.id_body,
@@ -338,7 +338,7 @@ class Suction():
             parentFramePosition=(0, 0, 0),
             childFramePosition=(0, 0, -0.08), childFrameOrientation=p.getQuaternionFromEuler(orientation),
             physicsClientId=self.env.client)
-        p.changeConstraint(constraint_id, maxForce=50, physicsClientId=self.env.client)
+        p.changeConstraint(self.constraint_id, maxForce=50, physicsClientId=self.env.client)
 
         # things that can be grabed in the task, maybe not use?
         self.obj_ids = obj_ids

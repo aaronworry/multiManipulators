@@ -114,8 +114,9 @@ class Manipulator():
                 self.action = 'grab'
                 self.last_action = 'move'
                 self.chassis.fixed()
+                self.ur5.thing = self.thing
         elif self.action == 'grab':
-            self.ur5.pick_and_place_FSM(self.thing)
+            self.ur5.pick_and_place_FSM()
             if self.ur5.grab_finished and self.ur5.place_position is None:
                 self.ur5.place_position = np.array([self.chassis.position[0] - 0.3 * np.cos(self.chassis.orientation),
                                                     self.chassis.position[0] - 0.3 * np.sin(self.chassis.orientation),

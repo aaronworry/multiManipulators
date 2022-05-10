@@ -5,8 +5,9 @@ import pybullet_data
 import time
 import torch
 
-from elements.UR5 import UR5_new
-from elements.box import Box
+from .elements.UR5 import UR5_new
+from .elements.manipulator import Manipulator
+from .elements.baseThing import Thing
 
 COLORS = {'red': [0.4, 0, 0], 'green': [0, 0.4, 0], 'blue': [0, 0, 0.4], 'black': [0, 0, 0], 'pink': [0.4, 0, 0.4],
           'yellow': [0.4, 0.4, 0], 'cyan': [0, 0.4, 0.4]}
@@ -18,33 +19,33 @@ class Env():
         box_config = {'cube': cube_num, 'cylinder': cylinder_num}  cylinder_num = 0
         num_thing:   max number of each type things                    num_thing = cube_num
         '''
-    def __init__(self, display=True, hz=240, radius = 0.6, robot_config=None, box_config=None, env_name='Static_Manipulator'):
+    def __init__(self, display=True, hz=240, radius = 0.6, robot_config=None, thing_config=None, env_name='Static_Manipulator'):
         # static manipulator
         # a pile of box with different color
         # using these boxes to erect shape as request
         self.robot_config = robot_config
-        self.box_config = box_config
+        self.thing_config = thing_config
         self.env_name = env_name
         self.radius = radius
         self.hz = hz
         self.TIMESTEP = 1. / self.hz
 
         if self.robot_config is None:
-            self.robot_config = [{'type1': 1}, {'type2': 0}]
+            self.robot_config = [{'type1': 0}, {'type2': 1}]
 
-        if self.box_config is None:
-            self.box_config = [{'cube': 2}, {'cylinder': 0}]
+        if self.thing_config is None:
+            self.thing_config = [{'cube': 2}, {'cylinder': 2}]
 
         self.robot_ids = []  # the model id
         self.robots = []  # the robot object
         self.robot_groups = [[] for _ in range(len(self.robot_config))]  # [[all object of robot1], [all object of robot2]]
 
-        self.box_ids = []
-        self.boxes = []
-        self.box_groups = [[] for _ in range(len(self.box_config))]
+        self.thing_ids = []
+        self.things = []
+        self.thing_groups = [[] for _ in range(len(self.thing_config))]
 
-        self.available_box_ids_set = None  # boxes took part in the task
-        self.removed_box_ids_set = None  # boxes not in task
+        self.available_thing_ids_set = None  # boxes took part in the task
+        self.removed_thing_ids_set = None  # boxes not in task
 
         self.client = None
 
@@ -65,15 +66,18 @@ class Env():
 
     def _create_env(self):
         planeID = p.loadURDF("plane.urdf", [0, 0, -0.01])
-
-        for idx, box_group in enumerate(self.box_config):
-            box_type, count = next(iter(box_group.items()))
+        poseListCube = [[0.2, -0.4, 0.0], [0.2, 0.4, 0.0]]
+        poseListCylinder = [[0.1, -0.4, 0.0], [0.1, 0.4, 0.0]]
+        for idx, thing_group in enumerate(self.thing_config):
+            thing_type, count = next(iter(thing_group.items()))
             for n in range(count):
-                if box_type == 'cube':
-                    box = Box(self, [0, 0, 0.3*n+0.3], color='pink')  # load boxes
-                    self.boxes.append(box)
-                    self.box_groups[idx].append(box)
-                    self.box_ids.append(box.id)
+                if thing_type == 'cube':
+                    a, b, c = poseListCube[n]
+                else:
+                    a, b, c = poseListCylinder[n]
+                thing = Thing(self, [a, b, c], thing_type)  # load boxes
+                self.things.append(thing)
+                self.thing_groups[idx].append(thing)
 
         num = self.robot_config[0]['type1'] + self.robot_config[1]['type2']
         poses = self._cal_circular_poses(self.radius, num)
@@ -82,48 +86,49 @@ class Env():
             robot_type, count = next(iter(g.items()))
             for kk in range(count):
                 if robot_type == 'type1':
-                    robot = UR5_new(self, poses[kk], robot_type)  # set the pose of ur
+                    robot = UR5_new(self, poses[kk], 1, robot_type)  # set the pose of ur
                 else:
-                    robot = UR5_new(self, poses[kk + self.robot_config[0]['type1']], robot_type)
+                    # robot = UR5_new(self, poses[kk + self.robot_config[0]['type1']], 1, robot_type)
+                    ur_base_pose = ((-0.6, 0.0, 0.0), p.getQuaternionFromEuler((0., 0., 0.)))
+                    robot = UR5_new(self, ur_base_pose, 1, robot_type)
                 self.robots.append(robot)
                 self.robot_groups[robot_group_index].append(robot)
-                self.robot_ids.append(robot.id)
 
-        self.available_box_ids_set = set()  # a set that include the task box
-        self.removed_box_ids_set = set(self.boxes)  # not in task
+        self.available_thing_ids_set = set()  # a set that include the task box
+        self.removed_thing_ids_set = set(self.things)  # not in task
 
 
     def _cal_circular_poses(self, radius, num):
         return [[[radius * np.cos(i * np.pi * 2 / num), radius * np.sin(i * np.pi * 2 / num), 0], p.getQuaternionFromEuler([0, 0, i * np.pi * 2 / num])] for i in range(num)]
 
-    def reset(self, cube_num=2):
+    def reset(self, cube_num=2, cylinder_num=2):
         # init
         self.available_box_ids_set = set()  # a set that include the task box
-        self.removed_box_ids_set = set(self.boxes)  # not in task
+        self.removed_box_ids_set = set(self.things)  # not in task
 
         for i in range(cube_num):
-            self.available_box_ids_set.add(self.box_groups[0][i])
-            if self.box_groups[0][i] in self.removed_box_ids_set:
-                self.removed_box_ids_set.remove(self.box_groups[0][i])
+            self.available_thing_ids_set.add(self.thing_groups[0][i])
+            self.removed_thing_ids_set.remove(self.thing_groups[0][i])
+        for j in range(cylinder_num):
+            self.available_thing_ids_set.add(self.thing_groups[1][j])
+            self.removed_thing_ids_set.remove(self.thing_groups[1][j])
 
         self.robot_reset()
 
         obs = self.stack_objects()
 
-        for robot in self.robots:
-            robot.control_arm_joints(robot.get_arm_joint_values())
-
-        for _ in range(50):
-            p.stepSimulation()
 
         return obs
 
     def robot_reset(self):
-        # 机械臂回复到初始姿态 init_pose
-        pass
+        for robot in self.robots:
+            robot.place_position = [-1.0, 0.0, 0.5]
+            robot.reset()
+
 
     def stack_objects(self):
-        # 重置物体,物体如何摆放
+        for thing in self.available_thing_ids_set:
+            thing.reset([thing.init_position,[0., 0., 0., 1.]])
 
         obs = None
         return obs
@@ -155,7 +160,7 @@ class Env():
         return pos, orn
 
     def _computeObs(self):
-        pass
+        return None
 
     def _getState(self):
         pass
@@ -168,20 +173,24 @@ class Env():
     def close(self):
         p.disconnect(physicsClientId=self.client)
 
-    def step(self, action = None):
+    def step(self):
         # all None or (at least 1 not None)
         reward, info= 0, {}
 
         # 机械臂运动
         for robot in self.robots:
-            robot.pick_and_place_FSM()
+            if robot.ready:
+                robot.pick_and_place_FSM()
 
 
         p.stepSimulation(physicsClientId=self.client)
-        done = 1
+        done = False
+
+        if len(self.available_thing_ids_set) == 0:
+            done = True
 
         obs = self._computeObs()
-        return obs, reward, done
+        return obs, reward, done, info
 
 """
     

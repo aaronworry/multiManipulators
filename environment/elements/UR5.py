@@ -140,6 +140,9 @@ class UR5():
         self.action = 'idle'
         self.working = False
 
+    def get_end_effector_pose(self):
+        return get_link_pose(self.id, 9)
+
 
 
 
@@ -472,6 +475,7 @@ class UR5_new():
         self.enabled = enabled
         self.subtarget_joint_actions = False
         self.grab_finished = True
+        self.ready = True
 
         self.action = 'idle'
         self.last_action = 'idle'
@@ -536,6 +540,26 @@ class UR5_new():
         self.max_distance_from_others = 0.5
         """
 
+    def change_ee(self, type):
+        if self.type == type:
+            pass
+        else:
+            self.ee.remove()
+            self.type = type
+            if self.type == 'type1':
+                self.ee = Suction(self.env, self, self.env.things)
+            else:
+                self.ee = Robotiq85(self.env, self, 7, self.env.things)
+
+            time_step = 0
+            while time_step < 480:
+                p.stepSimulation(physicsClientId=self.env.client)
+                time_step += 1
+
+            self.ready = True
+
+
+
     def update_closest_points(self):
         pass
 
@@ -545,13 +569,18 @@ class UR5_new():
         # self collision
         pass
 
-    def pick_and_place_FSM(self, thing):
+    def pick_and_place_FSM(self):
         if self.action == 'idle':
-            if thing:
+            if self.thing:
                 self.grab_finished = False
-                height = 0.15
-                self.target_joint_values = self.inverse_kinematics((thing.get_position()[0], thing.get_position()[1], thing.get_position()[2] + height))
-                self.thing = thing
+                height = 0
+                if self.type == 'type1':
+                    height = 0.15
+                else:
+                    height = 0.3
+
+                self.target_joint_values = self.inverse_kinematics((self.thing.get_position()[0], self.thing.get_position()[1], self.thing.get_position()[2] + height))
+                # self.thing = thing
                 self.action = 'goToGrab'
                 self.last_action = 'idle'
                 self.working = False
