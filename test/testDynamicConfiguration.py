@@ -110,7 +110,7 @@ for k in range(episode):
         # time.sleep(100)
         # action = get_action(env.robots, obs[0], env.available_thing_ids_set, obs[1])
 
-        if len(env.available_thing_ids_set) == 2 and robot.action == 'idle' and robot.type=='type1':
+        if len(env.available_thing_ids_set) == 2 and robot.action == 'idle' and robot.type=='type2':
             robot.ready = False
             robot.change_ee('type1')
         T1, T2 = taskAs(robot, T1, T2)

@@ -486,6 +486,7 @@ class UR5_new():
         self.pick_pose = None
         self.place_pose = None
         self.place_position = None
+        self.place_position2 = None
         '''
         if training:
             self.id = p.loadURDF('../../assets/ur5/ur5_training.urdf',
@@ -552,10 +553,9 @@ class UR5_new():
                 self.ee = Robotiq85(self.env, self, 7, self.env.things)
 
             time_step = 0
-            while time_step < 480:
+            while time_step < 2200:
                 p.stepSimulation(physicsClientId=self.env.client)
                 time_step += 1
-
             self.ready = True
 
 
@@ -577,7 +577,7 @@ class UR5_new():
                 if self.type == 'type1':
                     height = 0.15
                 else:
-                    height = 0.3
+                    height = 0.1
 
                 self.target_joint_values = self.inverse_kinematics((self.thing.get_position()[0], self.thing.get_position()[1], self.thing.get_position()[2] + height))
                 # self.thing = thing
@@ -608,7 +608,10 @@ class UR5_new():
                 self.target_joint_values = self.inverse_kinematics(self.place_position)
                 self.action = 'back'
                 self.last_action = 'toBack'
-
+            if not self.place_position2 is None:
+                self.target_joint_values = self.inverse_kinematics(self.place_position2)
+                self.action = 'back'
+                self.last_action = 'toBack'
 
         elif self.action == 'back':
             self._move_jointsss(self.target_joint_values, self.flag, 0.05)

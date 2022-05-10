@@ -66,7 +66,7 @@ class Env():
 
     def _create_env(self):
         planeID = p.loadURDF("plane.urdf", [0, 0, -0.01])
-        poseListCube = [[0.2, -0.4, 0.0], [0.2, 0.4, 0.0]]
+        poseListCube = [[0.3, -0.4, 0.0], [0.3, 0.4, 0.0]]
         poseListCylinder = [[0.1, -0.4, 0.0], [0.1, 0.4, 0.0]]
         for idx, thing_group in enumerate(self.thing_config):
             thing_type, count = next(iter(thing_group.items()))
@@ -122,7 +122,7 @@ class Env():
 
     def robot_reset(self):
         for robot in self.robots:
-            robot.place_position = [-1.0, 0.0, 0.5]
+            robot.place_position2 = np.array([0.4, 0.0, 0.6])
             robot.reset()
 
 
